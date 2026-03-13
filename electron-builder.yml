@@ -1,0 +1,33 @@
+appId: com.voicetyper.app
+productName: Voice Typer
+copyright: Copyright © 2024
+
+directories:
+  output: release
+
+files:
+  - dist/**/*
+  - node_modules/**/*
+  - package.json
+
+# ── Windows ─────────────────────────────────────────────────────────────────
+win:
+  target:
+    - target: zip
+      arch: [x64]
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+mac:
+  category: public.app-category.utilities
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+
+dmg:
+  title: Voice Typer
+
+# ── Общее ────────────────────────────────────────────────────────────────────
+extraMetadata:
+  main: dist/main.js

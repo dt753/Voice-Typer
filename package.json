@@ -1,0 +1,23 @@
+{
+  "name": "voice-typer",
+  "version": "1.0.0",
+  "description": "Voice-to-text for any app — Windows & Mac",
+  "main": "dist/main.js",
+  "author": "Voice Typer",
+  "scripts": {
+    "build": "tsc && node scripts/copy-renderer.js",
+    "start": "npm run build && env -u ELECTRON_RUN_AS_NODE node node_modules/electron/cli.js .",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never"
+  },
+  "dependencies": {
+    "openai": "^4.47.1",
+    "uiohook-napi": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.4.5"
+  }
+}

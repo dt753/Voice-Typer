@@ -1,0 +1,9 @@
+openai>=1.0.0
+sounddevice
+numpy
+pynput
+pyperclip
+pyautogui
+python-dotenv
+pystray
+Pillow
