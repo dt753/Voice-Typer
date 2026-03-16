@@ -13,7 +13,24 @@ import * as zlib from 'zlib';
 import { startHotkeyListener, stopHotkeyListener, updateHotkey, suspendHotkey, resumeHotkey } from './hotkey';
 import { transcribe } from './transcriber';
 import { injectText } from './injector';
-import { loadSettings, saveSettings } from './store';
+import { loadSettings, saveSettings, Replacement } from './store';
+
+function applyReplacements(text: string, replacements: Replacement[]): string {
+  let result = text;
+  for (const r of replacements) {
+    if (!r.from) continue;
+    const escaped = r.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    result = result.replace(regex, (match) => {
+      if (!r.preserveCase) return r.to;
+      if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+        return r.to.charAt(0).toUpperCase() + r.to.slice(1);
+      }
+      return r.to;
+    });
+  }
+  return result;
+}
 
 // Один экземпляр — если уже запущен, просто выходим
 if (!app.requestSingleInstanceLock()) {
@@ -206,7 +223,8 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
 
   setTrayState('processing');
   try {
-    const text = await transcribe(audioBuffer, settings.apiKey, settings.language);
+    const raw = await transcribe(audioBuffer, settings.apiKey, settings.language, settings.customInstructions, settings.dictionary);
+    const text = applyReplacements(raw, settings.replacements);
     console.log(`[STT] "${text}"`);
     const entry: HistoryEntry = { time, sizeBytes, status: text ? 'ok' : 'skipped', text: text || '(пусто)' };
     history.unshift(entry);
@@ -235,6 +253,7 @@ app.whenReady().then(() => {
 
   buildTray();
   createRecorderWindow();
+  openSettings();
 
   if (process.platform === 'darwin') {
     const trusted = systemPreferences.isTrustedAccessibilityClient(true);

@@ -307,6 +307,9 @@
 <div class="tabs">
   <div class="tab active" data-tab="settings">Настройки</div>
   <div class="tab" data-tab="history">История</div>
+  <div class="tab" data-tab="replacements">Замены</div>
+  <div class="tab" data-tab="instructions">Инструкции</div>
+  <div class="tab" data-tab="account">Аккаунт</div>
 </div>
 
 <!-- ── Вкладка настроек ── -->
@@ -373,7 +376,7 @@
         <span id="hotkeyHint">Нажмите для смены</span>
         <span class="hotkey-tag" id="hotkeyTag">F9</span>
       </button>
-      <div class="hint">Нажмите кнопку выше, затем желаемую клавишу. Поддерживаются F1–F12, ScrollLock, Pause, а также Ctrl/Alt/Shift + буква.</div>
+      <div class="hint">Нажмите кнопку выше, затем желаемую клавишу. Поддерживается любая одиночная клавиша (F1–F12, буква, цифра, стрелка) или сочетание с Ctrl/Alt/Shift.</div>
     </div>
   </div>
 
@@ -420,15 +423,19 @@
     else if (c === 'PageUp')     { key = 'PageUp'; }
     else if (c === 'PageDown')   { key = 'PageDown'; }
     else if (c === 'NumLock')    { key = 'NumLock'; }
-    // Буквы/цифры/стрелки — только с модификатором (Ctrl/Alt/Shift)
-    else if (c.startsWith('Key') && mods.length > 0) {
+    // Буквы/цифры/стрелки — разрешены с модификатором или без
+    else if (c.startsWith('Key')) {
       key = c.slice(3); // KeyA → A
     }
-    else if (c.startsWith('Digit') && mods.length > 0) {
+    else if (c.startsWith('Digit')) {
       key = c.slice(5); // Digit1 → 1
     }
-    else if (c.startsWith('Arrow') && mods.length > 0) {
+    else if (c.startsWith('Arrow')) {
       key = c.slice(5); // ArrowUp → Up
+    }
+    // Одиночный символ (`, -, =, [, ], \, ;, ', ,, ., / и т.д.)
+    else if (e.key.length === 1) {
+      key = e.key;
     }
     // Нажали голый модификатор или что-то неподходящее — игнорируем
     else { return null; }
@@ -586,8 +593,6 @@
     });
   }
 
-  init();
-
   // ── Tabs ─────────────────────────────────────────────────────────────────
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -673,5 +678,64 @@
     renderHistory();
   });
 </script>
+
+<!-- ── Вкладка замен ── -->
+<div class="tab-content" id="tab-replacements">
+<div class="container">
+  <h1 style="margin-top:8px">Замены</h1>
+  <div class="section">
+    <div class="section-title">Автозамены текста</div>
+    <div class="hint" style="margin-bottom:14px">Замены применяются после транскрипции. Например: «почта» → ваш email.</div>
+    <div id="replacementsList"></div>
+    <button class="btn" id="addReplacement" style="margin-top:8px;background:#313244;color:#cdd6f4;border:1px solid #45475a">+ Добавить замену</button>
+  </div>
+  <button class="btn" id="saveReplacements">Сохранить</button>
+  <div class="saved" id="savedReplacementsMsg"></div>
+</div>
+</div>
+
+<!-- ── Вкладка инструкций ── -->
+<div class="tab-content" id="tab-instructions">
+<div class="container">
+  <h1 style="margin-top:8px">Инструкции</h1>
+  <div class="section">
+    <div class="section-title">Инструкция для Whisper</div>
+    <div class="field">
+      <label>Пользовательские инструкции</label>
+      <textarea id="customInstructions" rows="5" style="width:100%;padding:9px 12px;background:#313244;border:1px solid #45475a;border-radius:6px;color:#cdd6f4;font-size:14px;outline:none;resize:vertical;font-family:inherit" placeholder="Например: Транскрибируй точно, сохраняй пунктуацию. Это речь разработчика ПО."></textarea>
+      <div class="hint">Подсказка передаётся Whisper перед распознаванием. Помогает улучшить точность.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Словарь</div>
+    <div class="field">
+      <label>Слова и термины (по одному на строку)</label>
+      <textarea id="dictionary" rows="8" style="width:100%;padding:9px 12px;background:#313244;border:1px solid #45475a;border-radius:6px;color:#cdd6f4;font-size:14px;outline:none;resize:vertical;font-family:monospace" placeholder="TypeScript
+Electron
+Whisper
+OpenAI"></textarea>
+      <div class="hint">Термины из словаря помогают Whisper правильно распознавать специфичные слова.</div>
+    </div>
+  </div>
+  <button class="btn" id="saveInstructions">Сохранить</button>
+  <div class="saved" id="savedInstructionsMsg"></div>
+</div>
+</div>
+
+<!-- ── Вкладка аккаунта ── -->
+<div class="tab-content" id="tab-account">
+<div class="container">
+  <h1 style="margin-top:8px">Аккаунт</h1>
+  <div class="section">
+    <div class="section-title">Профиль</div>
+    <div style="text-align:center;padding:32px 0;color:#6c7086">
+      <div style="font-size:48px;margin-bottom:16px">👤</div>
+      <div style="font-size:14px;margin-bottom:8px">Вход в аккаунт появится здесь</div>
+      <div style="font-size:12px">Синхронизация настроек, история и подписка — в будущих версиях</div>
+    </div>
+  </div>
+</div>
+</div>
+
 </body>
 </html>

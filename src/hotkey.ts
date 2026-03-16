@@ -28,9 +28,10 @@ function register(accel: string): boolean {
 
 // Если сохранённый хоткей в старом формате (event.code) — сбрасываем на F9
 function sanitize(hotkey: string): string {
-  // Старые форматы: ShiftRight, CapsLock, KeyA — не работают в globalShortcut
+  // Голые модификаторы не работают в globalShortcut
   if (/^(Shift|Control|Alt|Meta)(Left|Right)?$/.test(hotkey)) return 'F9';
-  if (/^(Key|Digit|Caps|Scroll|Print|Insert|Delete|Home|End|Page|Arrow)/.test(hotkey)) return 'F9';
+  // Старый формат event.code (KeyA, CapsLock и т.д.) — не работают в globalShortcut
+  if (/^(Key[A-Z]|Digit\d|Caps|Print|Scroll)/.test(hotkey)) return 'F9';
   return hotkey;
 }
 

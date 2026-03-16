@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('api', {
     micDeviceId: string;
     vadThreshold: number;
     hotkey: string;
+    replacements: { from: string; to: string; preserveCase: boolean }[];
+    dictionary: string[];
+    customInstructions: string;
   }): Promise<void> => ipcRenderer.invoke('settings:set', s),
 
   openExternal: (url: string) => shell.openExternal(url),

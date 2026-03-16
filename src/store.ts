@@ -2,12 +2,21 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 
+export interface Replacement {
+  from: string;
+  to: string;
+  preserveCase: boolean;
+}
+
 export interface AppSettings {
   apiKey: string;
   language: string;
   micDeviceId: string;
   vadThreshold: number;
   hotkey: string;
+  replacements: Replacement[];
+  dictionary: string[];
+  customInstructions: string;
 }
 
 const DEFAULTS: AppSettings = {
@@ -16,6 +25,9 @@ const DEFAULTS: AppSettings = {
   micDeviceId: '',
   vadThreshold: 0.008,
   hotkey: 'F9',
+  replacements: [],
+  dictionary: [],
+  customInstructions: '',
 };
 
 function settingsPath(): string {
