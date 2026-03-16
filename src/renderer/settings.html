@@ -593,6 +593,8 @@
     });
   }
 
+  init();
+
   // ── Tabs ─────────────────────────────────────────────────────────────────
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -677,6 +679,7 @@
     localHistory = [];
     renderHistory();
   });
+
 </script>
 
 <!-- ── Вкладка замен ── -->
@@ -737,5 +740,86 @@ OpenAI"></textarea>
 </div>
 </div>
 
+<!-- Toast уведомление -->
+<div id="toast" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#a6e3a1;color:#1e1e2e;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.3s">Сохранено</div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg || 'Сохранено';
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => {
+      t.style.opacity = '0';
+      setTimeout(() => { t.style.display = 'none'; }, 300);
+    }, 1800);
+  }
+
+  // ── Замены ──
+  let replacements = [];
+
+  function renderReplacements() {
+    const list = document.getElementById('replacementsList');
+    list.innerHTML = replacements.map((r, i) => `
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input data-idx="${i}" data-field="from" value="${(r.from||'').replace(/"/g,'&quot;')}" placeholder="Что заменить"
+          style="flex:1;padding:7px 10px;background:#313244;border:1px solid #45475a;border-radius:6px;color:#cdd6f4;font-size:13px;outline:none">
+        <span style="color:#6c7086">→</span>
+        <input data-idx="${i}" data-field="to" value="${(r.to||'').replace(/"/g,'&quot;')}" placeholder="На что"
+          style="flex:1;padding:7px 10px;background:#313244;border:1px solid #45475a;border-radius:6px;color:#cdd6f4;font-size:13px;outline:none">
+        <button data-del="${i}" style="background:none;border:none;color:#f38ba8;cursor:pointer;font-size:16px;padding:4px 8px">✕</button>
+      </div>`).join('');
+
+    list.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        replacements[+inp.dataset.idx][inp.dataset.field] = inp.value;
+      });
+    });
+    list.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        replacements.splice(+btn.dataset.del, 1);
+        renderReplacements();
+      });
+    });
+  }
+
+  async function loadReplacements() {
+    const s = await window.api.getSettings();
+    replacements = Array.isArray(s.replacements) ? s.replacements : [];
+    renderReplacements();
+  }
+
+  document.getElementById('addReplacement').addEventListener('click', () => {
+    replacements.push({ from: '', to: '' });
+    renderReplacements();
+  });
+
+  document.getElementById('saveReplacements').addEventListener('click', async () => {
+    await window.api.saveSettings({ replacements });
+    showToast('Замены сохранены');
+  });
+
+  loadReplacements();
+
+  // ── Инструкции ──
+  async function loadInstructions() {
+    const s = await window.api.getSettings();
+    document.getElementById('customInstructions').value = s.customInstructions || '';
+    document.getElementById('dictionary').value = Array.isArray(s.dictionary) ? s.dictionary.join('\n') : (s.dictionary || '');
+  }
+
+  document.getElementById('saveInstructions').addEventListener('click', async () => {
+    const customInstructions = document.getElementById('customInstructions').value;
+    const dictionary = document.getElementById('dictionary').value.split('\n').map(s => s.trim()).filter(Boolean);
+    await window.api.saveSettings({ customInstructions, dictionary });
+    showToast('Инструкции сохранены');
+  });
+
+  loadInstructions();
+
+  // Добавляем toast для основной кнопки сохранения настроек
+  document.getElementById('save').addEventListener('click', () => showToast('Настройки сохранены'), true);
+</script>
 </body>
 </html>

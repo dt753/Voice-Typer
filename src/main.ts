@@ -13,7 +13,7 @@ import * as zlib from 'zlib';
 import { startHotkeyListener, stopHotkeyListener, updateHotkey, suspendHotkey, resumeHotkey } from './hotkey';
 import { transcribe } from './transcriber';
 import { injectText } from './injector';
-import { loadSettings, saveSettings, Replacement } from './store';
+import { initDb, loadSettings, saveSettings, addHistoryEntry, getHistory, Replacement } from './db';
 
 function applyReplacements(text: string, replacements: Replacement[]): string {
   let result = text;
@@ -48,14 +48,6 @@ let recorderWin: BrowserWindow | null = null;
 let settingsWin: BrowserWindow | null = null;
 let isRecording = false;
 
-interface HistoryEntry {
-  time: string;
-  sizeBytes: number;
-  status: 'ok' | 'error' | 'skipped';
-  text?: string;
-  error?: string;
-}
-const history: HistoryEntry[] = [];
 
 // ── Иконки трея (PNG, работает на Windows и Mac) ─────────────────────────────
 
@@ -193,7 +185,7 @@ ipcMain.handle('hotkey:suspend', () => suspendHotkey());
 ipcMain.handle('hotkey:resume',  () => resumeHotkey());
 
 ipcMain.handle('settings:get', () => loadSettings());
-ipcMain.handle('history:get', () => history);
+ipcMain.handle('history:get', () => getHistory());
 
 ipcMain.handle('settings:set', (_event, data) => {
   const current = loadSettings();
@@ -226,16 +218,14 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
     const raw = await transcribe(audioBuffer, settings.apiKey, settings.language, settings.customInstructions, settings.dictionary);
     const text = applyReplacements(raw, settings.replacements);
     console.log(`[STT] "${text}"`);
-    const entry: HistoryEntry = { time, sizeBytes, status: text ? 'ok' : 'skipped', text: text || '(пусто)' };
-    history.unshift(entry);
-    if (history.length > 100) history.pop();
+    const entry = { time, sizeBytes, status: (text ? 'ok' : 'skipped') as 'ok' | 'skipped', text: text || '(пусто)' };
+    addHistoryEntry(entry);
     settingsWin?.webContents.send('history:entry', entry);
     if (text) injectText(text);
   } catch (err: any) {
     console.error('[ERR] Транскрипция:', err);
-    const entry: HistoryEntry = { time, sizeBytes, status: 'error', error: err?.message || String(err) };
-    history.unshift(entry);
-    if (history.length > 100) history.pop();
+    const entry = { time, sizeBytes, status: 'error' as 'error', error: err?.message || String(err) };
+    addHistoryEntry(entry);
     settingsWin?.webContents.send('history:entry', entry);
   } finally {
     setTrayState('idle');
@@ -245,6 +235,8 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
 // ── Запуск приложения ─────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  initDb();
+
   ICON = {
     idle:       makeTrayIcon(46, 204, 113),
     recording:  makeTrayIcon(231, 76, 60),
