@@ -159,8 +159,8 @@ function openSettings(): void {
   }
 
   settingsWin = new BrowserWindow({
-    width: 560,
-    height: 680,
+    width: 720,
+    height: 780,
     title: 'Voice Typer — Настройки',
     resizable: true,
     minimizable: true,
@@ -173,7 +173,6 @@ function openSettings(): void {
 
   settingsWin.loadFile(path.join(__dirname, 'renderer/settings.html'));
   settingsWin.setMenuBarVisibility(false);
-  settingsWin.maximize();
   settingsWin.on('closed', () => {
     settingsWin = null;
   });

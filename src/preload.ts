@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('api', {
   suspendHotkey: () => ipcRenderer.invoke('hotkey:suspend'),
   resumeHotkey:  () => ipcRenderer.invoke('hotkey:resume'),
 
+  platform: process.platform,
+
   // ── History ──────────────────────────────────────────────────────────────
   getHistory: () => ipcRenderer.invoke('history:get'),
   onHistoryEntry: (cb: (entry: any) => void) =>
