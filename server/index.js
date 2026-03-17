@@ -74,36 +74,21 @@ app.post('/transcribe', requireAuth, requireSubscription, upload.single('audio')
   try {
     const { language, instructions, dictionary } = req.body;
 
-    // Передаём аудио в OpenAI Whisper
-    const formData = new FormData();
-    formData.append('file', req.file.buffer, {
-      filename: 'audio.webm',
-      contentType: req.file.mimetype || 'audio/webm',
-    });
-    formData.append('model', 'whisper-1');
-    if (language) formData.append('language', language);
-
     let prompt = '';
     if (dictionary) prompt += dictionary;
     if (instructions) prompt += (prompt ? '. ' : '') + instructions;
-    if (prompt) formData.append('prompt', prompt);
 
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders(),
-      },
-      body: formData,
+    // Используем OpenAI SDK — он сам обрабатывает multipart
+    const { toFile } = require('openai');
+    const file = await toFile(req.file.buffer, 'audio.webm', { type: req.file.mimetype || 'audio/webm' });
+
+    const result = await openai.audio.transcriptions.create({
+      model: 'whisper-1',
+      file,
+      language: language || undefined,
+      prompt: prompt || undefined,
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error('[OpenAI error]', err);
-      return res.status(502).json({ error: 'Ошибка OpenAI' });
-    }
-
-    const result = await response.json();
     res.json({ text: result.text || '' });
   } catch (err) {
     console.error('[transcribe error]', err);
