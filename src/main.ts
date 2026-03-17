@@ -150,13 +150,6 @@ function createRecorderWindow(): void {
     },
   });
   recorderWin.loadFile(path.join(__dirname, 'renderer/recorder.html'));
-
-  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
-    callback(permission === 'media');
-  });
-  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
-    return permission === 'media';
-  });
 }
 
 // ── Окно настроек ─────────────────────────────────────────────────────────────
@@ -251,8 +244,21 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
 
 const APP_ICON = path.join(__dirname, '../assets/icon.png');
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   initDb();
+
+  // Запрашиваем доступ к микрофону на macOS
+  if (process.platform === 'darwin') {
+    await systemPreferences.askForMediaAccess('microphone');
+  }
+
+  // Разрешаем доступ к медиа для всех окон (до их создания)
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(permission === 'media');
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    return permission === 'media';
+  });
 
   const crystalIcon = nativeImage.createFromPath(APP_ICON).resize({ width: 32, height: 32 });
   ICON = {

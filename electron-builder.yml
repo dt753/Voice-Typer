@@ -22,6 +22,8 @@ win:
 # ── macOS ────────────────────────────────────────────────────────────────────
 mac:
   category: public.app-category.utilities
+  extendInfo:
+    NSMicrophoneUsageDescription: "Crystal Voice needs microphone access for voice-to-text transcription."
   target:
     - target: dmg
       arch: [x64]
