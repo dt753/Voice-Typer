@@ -158,6 +158,28 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 .ghost-btn:hover { border-color: rgba(255,255,255,0.1); color: #6b75a0; }
 .danger-btn { width: 100%; padding: 9px; border: 1px solid rgba(255,80,80,0.15); border-radius: 7px; font-size: 12px; font-family: 'Inter', sans-serif; cursor: pointer; background: transparent; color: #5a3040; transition: all 0.2s; }
 .danger-btn:hover { border-color: rgba(255,80,80,0.35); color: #e06b6b; background: rgba(255,80,80,0.04); }
+
+/* ── ACCOUNT PAGE ──────────────────────────────── */
+.ac-hover-card { position: relative; overflow: visible !important; transition: border-color 0.2s, background 0.2s; }
+.ac-hover-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, rgba(200,185,255,0.6), rgba(155,125,255,0.2)); border-radius: 10px 0 0 10px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.ac-hover-card:hover { border-color: rgba(155,125,255,0.22) !important; background: #1d2030 !important; }
+.ac-hover-card:hover::before { opacity: 1; }
+.ac-card-crystal { position: absolute; top: -6px; right: 12px; pointer-events: none; opacity: 0; transition: opacity 0.2s, filter 0.2s; }
+.ac-hover-card:hover .ac-card-crystal { opacity: 1; filter: drop-shadow(0 0 4px rgba(200,185,255,0.7)); }
+.ac-crystal-hero { display: flex; justify-content: center; align-items: flex-end; gap: 6px; height: 64px; margin-bottom: 4px; }
+.ac-crystal-hero svg { flex-shrink: 0; }
+.ac-hero-title { text-align: center; font-size: 17px; font-weight: 500; color: #c9b8ff; letter-spacing: 0.02em; margin-bottom: 2px; }
+.ac-hero-sub { text-align: center; font-size: 12px; color: #3a4568; margin-bottom: 8px; }
+.ac-avatar-crystal { width: 48px; height: 48px; border-radius: 50%; background: rgba(155,125,255,0.1); border: 1px solid rgba(155,125,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ac-sub-active { background: rgba(61,122,85,0.12); border: 1px solid rgba(61,122,85,0.25); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+.ac-sub-inactive { background: rgba(139,64,85,0.08); border: 1px solid rgba(139,64,85,0.2); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+.ac-ref-code { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 500; color: #c9b8ff; letter-spacing: 0.15em; background: #0e1018; border: 1px solid rgba(155,125,255,0.2); border-radius: 8px; padding: 10px 14px; text-align: center; flex: 1; cursor: default; }
+.ac-copy-btn { padding: 10px 16px; border: 1px solid rgba(155,125,255,0.25); border-radius: 8px; font-size: 12px; font-family: 'Inter', sans-serif; cursor: pointer; background: rgba(155,125,255,0.06); color: #9b7dff; transition: all 0.2s; white-space: nowrap; }
+.ac-copy-btn:hover { border-color: rgba(155,125,255,0.5); background: rgba(155,125,255,0.12); color: #c9b8ff; }
+.ac-ref-share { background: linear-gradient(135deg, rgba(155,125,255,0.06), rgba(120,200,255,0.04)); border: 1px solid rgba(155,125,255,0.15); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; }
+.ac-ref-share::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(155,125,255,0.03), transparent); pointer-events: none; }
+.ac-ref-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #3a4165; }
+.ac-ref-desc { font-size: 12px; color: #4a5270; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -180,16 +202,6 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 
 <!-- PAGE 0: SETTINGS -->
 <div class="page visible" id="page-0">
-
-  <!-- API KEY -->
-  <div class="section-card">
-    <div class="section-label">API</div>
-    <div>
-      <div class="field-label">OpenAI API Key</div>
-      <input class="input-field" type="password" id="SE_apiKey" placeholder="sk-…" autocomplete="off">
-      <div class="field-sub" style="margin-top:6px;">Получить на <a href="#" onclick="event.preventDefault();window.api.openExternal('https://platform.openai.com/api-keys')">platform.openai.com/api-keys</a></div>
-    </div>
-  </div>
 
   <!-- MIC -->
   <div class="section-card">
@@ -564,32 +576,105 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 
 <!-- PAGE 4: АККАУНТ -->
 <div class="page" id="page-4">
-  <div class="page-title">Аккаунт</div>
+
+  <!-- Гость -->
   <div class="auth-state visible" id="state-guest">
     <div class="section-card">
-      <div class="section-label">Профиль</div>
-      <div class="guest-center">
-        <div class="guest-avatar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
-        <div style="font-size:13px;color:#5a6480;">Вы не вошли</div>
-        <div class="guest-sub">Синхронизация настроек и история — в будущих версиях</div>
+      <!-- Кристаллы сверху -->
+      <div class="ac-crystal-hero">
+        <svg width="10" height="20" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg" style="opacity:0.6">
+          <defs><linearGradient id="acgl1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="acgr1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+          <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#acgl1)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#acgr1)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.8"/>
+        </svg>
+        <svg width="16" height="32" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="acgl2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="acgr2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+          <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#acgl2)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+          <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#acgr2)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+          <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.7"/>
+          <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.65)"/>
+        </svg>
+        <svg width="10" height="20" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg" style="opacity:0.6">
+          <defs><linearGradient id="acgl3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="acgr3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+          <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#acgl3)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#acgr3)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.8"/>
+        </svg>
       </div>
-      <div class="divider"></div>
-      <div><div class="field-label">Email</div><input class="input-field" type="email" id="AC_email" placeholder="you@example.com"></div>
-      <div><div class="field-label">Пароль</div><input class="input-field" type="password" id="AC_password" placeholder="••••••••"></div>
-      <button class="save-btn" onclick="handleLogin()" style="margin-top:4px;"><div class="save-inner">Войти</div></button>
-      <button class="ghost-btn" onclick="window.api.openExternal('https://platform.openai.com')">Создать аккаунт</button>
+      <div class="ac-hero-title" id="AC_form-label">Войдите в аккаунт</div>
+      <div class="ac-hero-sub">Crystal Voice — голос в текст</div>
+      <div class="divider" style="margin:0 -22px 4px;"></div>
+      <div><div class="field-label">Email</div><input class="input-field" type="email" id="AC_email" placeholder="you@example.com" autocomplete="off"></div>
+      <div><div class="field-label">Пароль</div><input class="input-field" type="password" id="AC_password" placeholder="••••••••" autocomplete="off"></div>
+      <div id="AC_ref-row" style="display:none;"><div class="field-label">Реферальный код <span style="color:#3a4568;">(необязательно)</span></div><input class="input-field" id="AC_ref-input" placeholder="например: a1b2c3d4"></div>
+      <div id="AC_msg" style="font-size:12px;min-height:16px;"></div>
+      <button class="save-btn" id="AC_submit-btn" onclick="handleAuthSubmit()"><div class="save-inner" id="AC_submit-label">Войти</div></button>
+      <button class="ghost-btn" id="AC_toggle-btn" onclick="toggleAuthMode()" style="margin-top:2px;">Нет аккаунта? Зарегистрироваться</button>
     </div>
   </div>
+
+  <!-- Авторизован -->
   <div class="auth-state" id="state-auth">
-    <div class="section-card">
-      <div class="section-label">Профиль</div>
+    <!-- Профиль + подписка -->
+    <div class="section-card ac-hover-card">
+      <svg class="ac-card-crystal" width="14" height="22" viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="acg1l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient><linearGradient id="acg1r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient></defs><polygon points="10,1 7,6 7,24 10,28 13,24 13,6" fill="url(#acg1l)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="13,6 10,1 16,5 16,25 13,28 10,28 13,24" fill="url(#acg1r)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="10,1 16,5 13,6 7,6" fill="#eeeaf8" stroke="#2e2050" stroke-width="1"/></svg>
       <div class="profile-row">
-        <div class="avatar" id="AC_initials">?</div>
-        <div><div class="profile-name" id="AC_name">Пользователь</div><div class="profile-email" id="AC_email-disp" style="margin-top:3px;"></div></div>
+        <div class="ac-avatar-crystal">
+          <svg width="20" height="32" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="avgl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="avgr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+            <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#avgl)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+            <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#avgr)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+            <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.7"/>
+            <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.65)"/>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <input id="AC_display-name" class="input-field" placeholder="Введи никнейм" style="background:transparent;border:none;border-bottom:1px solid rgba(155,125,255,0.15);border-radius:0;padding:4px 0;font-size:14px;font-weight:500;color:#d0d4e8;width:100%;" autocomplete="off">
+          <div class="profile-email" id="AC_email-disp" style="margin-top:4px;"></div>
+        </div>
       </div>
       <div class="divider"></div>
-      <div class="plan-row"><span style="font-size:12px;color:#4a5270;">Подписка</span><span class="plan-badge">Free</span></div>
+      <div id="AC_sub-block" class="ac-sub-inactive">
+        <div>
+          <div style="font-size:12px;color:#4a5270;margin-bottom:2px;">Подписка</div>
+          <div id="AC_plan-until" style="font-size:11px;color:#3a4568;"></div>
+        </div>
+        <span class="plan-badge" id="AC_plan-badge">—</span>
+      </div>
     </div>
+
+    <!-- Реферальный код -->
+    <div class="ac-ref-share ac-hover-card">
+      <svg class="ac-card-crystal" width="14" height="22" viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="acg2l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient><linearGradient id="acg2r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient></defs><polygon points="10,1 7,6 7,24 10,28 13,24 13,6" fill="url(#acg2l)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="13,6 10,1 16,5 16,25 13,28 10,28 13,24" fill="url(#acg2r)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="10,1 16,5 13,6 7,6" fill="#eeeaf8" stroke="#2e2050" stroke-width="1"/></svg>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="10" height="18" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;opacity:0.7">
+          <defs><linearGradient id="rfgl" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="rfgr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+          <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#rfgl)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#rfgr)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.8"/>
+        </svg>
+        <div class="ac-ref-label">Реферальный код</div>
+      </div>
+      <div class="ac-ref-desc">Поделись кодом — друг получит 1 месяц бесплатно</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="ac-ref-code" id="AC_my-ref">—</div>
+        <div class="crystal-btn" id="AC_copy-wrap" style="width:90px;flex-shrink:0"><button class="action-btn" id="AC_copy-btn" style="width:90px;padding:5px 0;text-align:center">Копировать</button></div>
+      </div>
+    </div>
+
+    <!-- Активировать код -->
+    <div class="section-card ac-hover-card">
+      <svg class="ac-card-crystal" width="14" height="22" viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="acg3l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient><linearGradient id="acg3r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient></defs><polygon points="10,1 7,6 7,24 10,28 13,24 13,6" fill="url(#acg3l)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="13,6 10,1 16,5 16,25 13,28 10,28 13,24" fill="url(#acg3r)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="10,1 16,5 13,6 7,6" fill="#eeeaf8" stroke="#2e2050" stroke-width="1"/></svg>
+      <div class="section-label">Активировать код</div>
+      <div style="font-size:12px;color:#4a5270;margin-bottom:10px;">Введи реферальный код друга — получишь 1 месяц бесплатно</div>
+      <div style="display:flex;gap:8px;">
+        <input class="input-field" id="AC_apply-ref" placeholder="a1b2c3d4" style="flex:1;">
+        <div class="crystal-btn" id="AC_apply-wrap" style="width:90px;flex-shrink:0"><button class="action-btn" id="AC_apply-btn" onclick="applyRef()" style="width:90px;padding:5px 0;text-align:center">Применить</button></div>
+      </div>
+      <div id="AC_ref-msg" style="font-size:12px;min-height:16px;margin-top:6px;"></div>
+    </div>
+
     <button class="danger-btn" onclick="handleLogout()">Выйти из аккаунта</button>
   </div>
 </div>
@@ -1020,6 +1105,9 @@ document.getElementById('HI_clearBtn').addEventListener('click', () => {
 });
 attachShimmer(document.getElementById('HI_clearWrap'), true);
 attachShimmer(document.getElementById('IN_addTermBtn'), false);
+attachShimmer(document.getElementById('AC_copy-wrap'), false);
+attachShimmer(document.getElementById('AC_apply-wrap'), false);
+document.getElementById('AC_copy-btn').addEventListener('click', copyRefCode);
 
 // ══ REPLACEMENTS ═════════════════════════════════
 let replacements = [];
@@ -1163,9 +1251,130 @@ function previewSound() {
   window.api.previewSound(vol);
 }
 
+// ══ AUTH ═════════════════════════════════════════
+let authMode = 'login'; // 'login' | 'register'
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const isReg = authMode === 'register';
+  document.getElementById('AC_form-label').textContent = isReg ? 'Регистрация' : 'Вход';
+  document.getElementById('AC_submit-label').textContent = isReg ? 'Зарегистрироваться' : 'Войти';
+  document.getElementById('AC_toggle-btn').textContent = isReg ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться';
+  document.getElementById('AC_ref-row').style.display = isReg ? '' : 'none';
+  document.getElementById('AC_msg').textContent = '';
+}
+
+async function handleAuthSubmit() {
+  const email = document.getElementById('AC_email').value.trim();
+  const password = document.getElementById('AC_password').value;
+  const msg = document.getElementById('AC_msg');
+  if (!email || !password) { msg.style.color = '#e06b6b'; msg.textContent = 'Заполни email и пароль'; return; }
+  msg.style.color = '#4a5270';
+  msg.textContent = 'Подождите…';
+  try {
+    let result;
+    if (authMode === 'login') {
+      result = await window.api.login(email, password);
+    } else {
+      const refCode = document.getElementById('AC_ref-input').value.trim();
+      result = await window.api.register(email, password);
+      if (result && result.ok && refCode) {
+        await window.api.applyReferral(refCode);
+      }
+    }
+    if (!result) { msg.style.color = '#e06b6b'; msg.textContent = 'Нет ответа от сервера'; return; }
+    if (result.error) {
+      msg.style.color = '#e06b6b';
+      msg.textContent = result.error;
+      return;
+    }
+    if (result.needConfirm) {
+      msg.style.color = '#9b7dff';
+      msg.textContent = 'Письмо отправлено — подтверди email и войди';
+      return;
+    }
+    msg.textContent = '';
+    await loadAuthState();
+  } catch(e) {
+    msg.style.color = '#e06b6b';
+    msg.textContent = 'Ошибка: ' + (e.message || String(e));
+  }
+}
+
+async function handleLogout() {
+  await window.api.logout();
+  document.getElementById('state-guest').classList.add('visible');
+  document.getElementById('state-auth').classList.remove('visible');
+}
+
+async function loadAuthState() {
+  const s = await window.api.getSettings();
+  if (!s.authToken) {
+    document.getElementById('state-guest').classList.add('visible');
+    document.getElementById('state-auth').classList.remove('visible');
+    return;
+  }
+  document.getElementById('state-guest').classList.remove('visible');
+  document.getElementById('state-auth').classList.add('visible');
+  document.getElementById('AC_email-disp').textContent = s.userEmail || '';
+  const nameInput = document.getElementById('AC_display-name');
+  nameInput.value = s.displayName || '';
+  nameInput.onblur = async () => {
+    await window.api.saveSettings({ displayName: nameInput.value.trim() });
+  };
+  nameInput.onkeydown = (e) => { if (e.key === 'Enter') nameInput.blur(); };
+
+  const sub = await window.api.getSubscription();
+  const badge = document.getElementById('AC_plan-badge');
+  const until = document.getElementById('AC_plan-until');
+  const subBlock = document.getElementById('AC_sub-block');
+  if (sub?.subscription?.status === 'active' && sub.subscription.current_period_end) {
+    const d = new Date(sub.subscription.current_period_end);
+    badge.textContent = 'Активна';
+    badge.style.color = '#3d7a55';
+    badge.style.borderColor = 'rgba(61,122,85,0.3)';
+    until.textContent = `До ${d.toLocaleDateString('ru-RU')}`;
+    subBlock.className = 'ac-sub-active';
+  } else {
+    badge.textContent = 'Неактивна';
+    badge.style.color = '#8b4055';
+    badge.style.borderColor = 'rgba(139,64,85,0.3)';
+    until.textContent = '';
+    subBlock.className = 'ac-sub-inactive';
+  }
+  if (sub?.referral_code) {
+    document.getElementById('AC_my-ref').textContent = sub.referral_code;
+  }
+}
+
+function copyRefCode() {
+  const code = (document.getElementById('AC_my-ref').textContent || '').trim();
+  if (!code || code === '—') return;
+  window.api.writeClipboard(code).then(() => {
+    const btn = document.getElementById('AC_copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Скопировано!';
+    btn.style.color = '#7dffb0';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  });
+}
+
+async function applyRef() {
+  const code = document.getElementById('AC_apply-ref').value.trim();
+  const msg = document.getElementById('AC_ref-msg');
+  if (!code) return;
+  msg.style.color = '#4a5270'; msg.textContent = 'Применяем…';
+  const result = await window.api.applyReferral(code);
+  if (result.error) {
+    msg.style.color = '#e06b6b'; msg.textContent = result.error;
+  } else {
+    msg.style.color = '#3d7a55'; msg.textContent = result.message || '1 месяц активирован!';
+    await loadAuthState();
+  }
+}
+
 async function init() {
   const s = await window.api.getSettings();
-  document.getElementById('SE_apiKey').value = s.apiKey || '';
   setLangGrid(s.language || 'ru');
   const sliderV = Math.round((s.vadThreshold ?? 0.008) * 1000);
   const range = document.getElementById('SE_vadRange');
@@ -1179,7 +1388,6 @@ async function init() {
 
   document.getElementById('SE_saveBtn').addEventListener('click', async () => {
     const settings = {
-      apiKey:       document.getElementById('SE_apiKey').value.trim(),
       language:     selectedLang,
       micDeviceId:  document.getElementById('SE_micDevice').value,
       vadThreshold: parseInt(range.value) / 1000,
@@ -1197,6 +1405,7 @@ async function init() {
   await loadReplacements();
   await loadInstructions();
   loadHistory();
+  await loadAuthState();
 }
 
 init();

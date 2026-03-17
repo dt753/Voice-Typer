@@ -43,4 +43,11 @@ contextBridge.exposeInMainWorld('api', {
   onOverlayState: (cb: (state: string) => void) =>
     ipcRenderer.on('overlay:state', (_e, state) => cb(state)),
   overlayClick: () => ipcRenderer.send('overlay:mic-click'),
+
+  // ── Auth ─────────────────────────────────────────────────────────────────
+  login:           (email: string, password: string) => ipcRenderer.invoke('auth:login', { email, password }),
+  register:        (email: string, password: string) => ipcRenderer.invoke('auth:register', { email, password }),
+  logout:          () => ipcRenderer.invoke('auth:logout'),
+  getSubscription: () => ipcRenderer.invoke('auth:getSubscription'),
+  applyReferral:   (code: string) => ipcRenderer.invoke('auth:applyReferral', code),
 });

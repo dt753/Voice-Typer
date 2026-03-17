@@ -250,6 +250,59 @@ ipcMain.handle('shell:openMicSettings', () => {
 });
 
 ipcMain.handle('settings:get', () => loadSettings());
+
+const SERVER_URL = 'https://voice-typer-production.up.railway.app';
+
+ipcMain.handle('auth:login', async (_event, { email, password }: { email: string; password: string }) => {
+  const res = await fetch(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json() as any;
+  if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка входа' };
+  saveSettings({ authToken: data.access_token, userEmail: email });
+  return { ok: true };
+});
+
+ipcMain.handle('auth:register', async (_event, { email, password }: { email: string; password: string }) => {
+  const res = await fetch(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json() as any;
+  if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка регистрации' };
+  if (data.access_token) saveSettings({ authToken: data.access_token, userEmail: email });
+  return { ok: true, needConfirm: !data.access_token };
+});
+
+ipcMain.handle('auth:logout', () => {
+  saveSettings({ authToken: '', userEmail: '' });
+});
+
+ipcMain.handle('auth:getSubscription', async () => {
+  const settings = loadSettings();
+  if (!settings.authToken) return null;
+  try {
+    const res = await fetch(`${SERVER_URL}/subscription`, {
+      headers: { Authorization: `Bearer ${settings.authToken}` },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+});
+
+ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
+  const settings = loadSettings();
+  if (!settings.authToken) return { error: 'Не авторизован' };
+  const res = await fetch(`${SERVER_URL}/referral/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.authToken}` },
+    body: JSON.stringify({ code }),
+  });
+  return await res.json();
+});
 ipcMain.handle('history:get', () => getHistory());
 ipcMain.handle('history:delete', (_event, id: number) => deleteHistoryEntry(id));
 ipcMain.handle('history:clear', () => clearHistory());
@@ -289,7 +342,7 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   const time = new Date().toLocaleTimeString('ru-RU');
   const sizeBytes = audioBuffer.length;
 
-  if (!settings.apiKey) {
+  if (!settings.authToken) {
     setTrayState('idle');
     openSettings();
     return;
@@ -298,7 +351,7 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   setTrayState('processing');
   showOverlay('processing');
   try {
-    const raw = await transcribe(audioBuffer, settings.apiKey, settings.language, settings.customInstructions, settings.dictionary);
+    const raw = await transcribe(audioBuffer, settings.authToken, settings.language, settings.customInstructions, settings.dictionary);
     const text = applyReplacements(raw, settings.replacements);
     console.log(`[STT] "${text}"`);
     const entry = { time, sizeBytes, status: (text ? 'ok' : 'skipped') as 'ok' | 'skipped', text: text || '(пусто)' };

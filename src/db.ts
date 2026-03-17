@@ -10,7 +10,9 @@ export interface Replacement {
 }
 
 export interface AppSettings {
-  apiKey: string;
+  authToken: string;
+  userEmail: string;
+  displayName: string;
   language: string;
   micDeviceId: string;
   vadThreshold: number;
@@ -31,7 +33,9 @@ export interface HistoryEntry {
 }
 
 const DEFAULTS: AppSettings = {
-  apiKey: '',
+  authToken: '',
+  userEmail: '',
+  displayName: '',
   language: 'ru',
   micDeviceId: '',
   vadThreshold: 0.008,
