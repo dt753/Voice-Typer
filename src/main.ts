@@ -147,6 +147,7 @@ function createRecorderWindow(): void {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
+      backgroundThrottling: false,
     },
   });
   recorderWin.loadFile(path.join(__dirname, 'renderer/recorder.html'));
@@ -245,14 +246,10 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
 const APP_ICON = path.join(__dirname, '../assets/icon.png');
 
 app.whenReady().then(async () => {
+  // 1. База данных — первым делом
   initDb();
 
-  // Запрашиваем доступ к микрофону на macOS
-  if (process.platform === 'darwin') {
-    await systemPreferences.askForMediaAccess('microphone');
-  }
-
-  // Разрешаем доступ к медиа для всех окон (до их создания)
+  // 2. Разрешаем медиа-доступ для всех сессий (до создания окон)
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === 'media');
   });
@@ -260,6 +257,15 @@ app.whenReady().then(async () => {
     return permission === 'media';
   });
 
+  // 3. На macOS запрашиваем разрешение на микрофон до открытия окон
+  if (process.platform === 'darwin') {
+    const micGranted = await systemPreferences.askForMediaAccess('microphone');
+    if (!micGranted) {
+      console.warn('[WARN] Доступ к микрофону отклонён. Откройте Системные настройки → Конфиденциальность → Микрофон.');
+    }
+  }
+
+  // 4. Иконки
   const crystalIcon = nativeImage.createFromPath(APP_ICON).resize({ width: 32, height: 32 });
   ICON = {
     idle:       crystalIcon,
@@ -267,17 +273,20 @@ app.whenReady().then(async () => {
     processing: makeTrayIcon(243, 156, 18),
   };
 
+  // 5. Трей → скрытое окно записи → окно настроек
   buildTray();
   createRecorderWindow();
   openSettings();
 
+  // 6. На macOS запрашиваем разрешение Accessibility для вставки текста
   if (process.platform === 'darwin') {
     const trusted = systemPreferences.isTrustedAccessibilityClient(true);
     if (!trusted) {
-      console.warn('[WARN] Нужно разрешение Accessibility в Системных настройках!');
+      console.warn('[WARN] Нужно разрешение Accessibility → Системные настройки → Конфиденциальность → Универсальный доступ.');
     }
   }
 
+  // 7. Запускаем слушатель хоткея
   const settings = loadSettings();
   startHotkeyListener(() => {
     if (!isRecording) {
