@@ -204,8 +204,11 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
     </div>
     <div class="divider"></div>
     <div>
-      <div class="field-label">Уровень сигнала</div>
-      <div class="mic-level-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="field-label" style="margin-bottom:0;">Уровень сигнала</div>
+        <button id="SE_mic-test-btn" onclick="toggleMicTest()" style="font-size:11px;padding:4px 12px;background:rgba(155,125,255,0.1);border:1px solid rgba(155,125,255,0.25);border-radius:5px;color:#7a86a8;cursor:pointer;transition:all 0.2s;">▶ Проверить</button>
+      </div>
+      <div class="mic-level-wrap" id="SE_mic-wrap" style="display:none;">
         <div class="mic-level-bar-bg">
           <div class="mic-level-bar" id="SE_mic-bar"></div>
           <div class="threshold-mark" id="SE_thresh-mark" style="left:15%"></div>
@@ -217,7 +220,7 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
           </div>
           <span class="mic-db" id="SE_mic-db">— дБ</span>
         </div>
-        <div id="SE_mic-blocked" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:6px;display:none;align-items:center;justify-content:space-between;gap:10px;">
+        <div id="SE_mic-blocked" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:6px;align-items:center;justify-content:space-between;gap:10px;">
           <span style="font-size:11px;color:#c0614a;">Микрофон заблокирован системой</span>
           <button onclick="window.api.openMicSettings()" style="font-size:11px;padding:4px 10px;background:rgba(155,125,255,0.12);border:1px solid rgba(155,125,255,0.3);border-radius:5px;color:#c9b8ff;cursor:pointer;white-space:nowrap;">Открыть настройки</button>
         </div>
@@ -603,6 +606,7 @@ function switchTab(i) {
   document.querySelectorAll('.page').forEach((p,j) => p.classList.toggle('visible', i===j));
   if (i === 1) loadHistory();
   if (i === 0) setTimeout(() => { const r = document.getElementById('SE_vadRange'); if(r) updateVad(r.value); }, 10);
+  if (i !== 0 && micTestActive) stopMicVisualizer();
 }
 
 // ══ VAD SLIDER ═══════════════════════════════════
@@ -640,8 +644,33 @@ function updateVol(v) {
 
 // ══ MIC VISUALIZER ═══════════════════════════════
 let micStream = null, micAnalyser = null, micAnimFrame = null, micAudioCtx = null;
+let micTestActive = false;
 
-async function startMicVisualizer() {
+function stopMicVisualizer() {
+  micTestActive = false;
+  if (micAnimFrame) { cancelAnimationFrame(micAnimFrame); micAnimFrame = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (micAudioCtx) { micAudioCtx.close(); micAudioCtx = null; }
+  micAnalyser = null;
+  const wrap = document.getElementById('SE_mic-wrap');
+  const btn  = document.getElementById('SE_mic-test-btn');
+  const bar  = document.getElementById('SE_mic-bar');
+  const db   = document.getElementById('SE_mic-db');
+  const dot  = document.getElementById('SE_mic-dot');
+  if (wrap) wrap.style.display = 'none';
+  if (btn)  { btn.textContent = '▶ Проверить'; btn.style.color = '#7a86a8'; btn.style.borderColor = 'rgba(155,125,255,0.25)'; }
+  if (bar)  bar.style.width = '0%';
+  if (db)   db.textContent = '— дБ';
+  if (dot)  { dot.classList.add('silent'); dot.style.background = ''; }
+}
+
+async function toggleMicTest() {
+  if (micTestActive) { stopMicVisualizer(); return; }
+  micTestActive = true;
+  const btn  = document.getElementById('SE_mic-test-btn');
+  const wrap = document.getElementById('SE_mic-wrap');
+  if (btn)  { btn.textContent = '■ Остановить'; btn.style.color = '#c9b8ff'; btn.style.borderColor = 'rgba(155,125,255,0.5)'; }
+  if (wrap) wrap.style.display = 'block';
   try {
     micStream   = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -653,6 +682,10 @@ async function startMicVisualizer() {
   } catch (_) {
     animateMicFallback();
   }
+}
+
+async function startMicVisualizer() {
+  // Не запускаем автоматически — только по кнопке
 }
 
 function animateMicReal() {
@@ -1143,7 +1176,6 @@ async function init() {
   volRange.value = s.soundVolume ?? 70;
   setTimeout(() => updateVol(volRange.value), 50);
   await loadMicDevices(s.micDeviceId || '');
-  startMicVisualizer();
 
   document.getElementById('SE_saveBtn').addEventListener('click', async () => {
     const settings = {
