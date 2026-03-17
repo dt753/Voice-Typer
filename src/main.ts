@@ -8,6 +8,7 @@ import {
   systemPreferences,
   session,
   shell,
+  clipboard,
 } from 'electron';
 import * as path from 'path';
 import * as zlib from 'zlib';
@@ -205,6 +206,7 @@ ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('history:get', () => getHistory());
 ipcMain.handle('history:delete', (_event, id: number) => deleteHistoryEntry(id));
 ipcMain.handle('history:clear', () => clearHistory());
+ipcMain.handle('clipboard:write', (_event, text: string) => clipboard.writeText(text));
 
 ipcMain.handle('settings:set', (_event, data) => {
   const current = loadSettings();

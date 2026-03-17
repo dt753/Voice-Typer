@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('api', {
   resumeHotkey:  () => ipcRenderer.invoke('hotkey:resume'),
   previewSound:  (vol: number) => ipcRenderer.invoke('sound:preview', vol),
   openMicSettings: () => ipcRenderer.invoke('shell:openMicSettings'),
+  writeClipboard: (text: string) => ipcRenderer.invoke('clipboard:write', text),
 
   platform: process.platform,
 

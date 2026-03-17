@@ -929,7 +929,7 @@ function renderHistoryEntry(entry) {
 
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(entry.text||'').then(() => {
+      window.api.writeClipboard(entry.text||'').then(() => {
         const o = copyBtn.textContent;
         copyBtn.textContent = 'Скопировано!';
         copyBtn.style.color = '#7dffb0';
