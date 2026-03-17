@@ -144,39 +144,47 @@ function buildTray(): void {
 
 // ── Оверлей записи ────────────────────────────────────────────────────────────
 
+function setOverlayBounds(mode: 'idle' | 'active'): void {
+  if (!overlayWin) return;
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const w = mode === 'idle' ? 100 : 380;
+  const h = mode === 'idle' ? 50 : 68;
+  overlayWin.setBounds({ x: Math.round(width / 2 - w / 2), y: height - h - 12, width: w, height: h });
+}
+
 function createOverlayWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   overlayWin = new BrowserWindow({
-    width: 360,
-    height: 64,
-    x: Math.round(width / 2 - 180),
-    y: height - 80,
+    width: 100,
+    height: 50,
+    x: Math.round(width / 2 - 50),
+    y: height - 62,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    focusable: false,
+    focusable: true,
     resizable: false,
-    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       backgroundThrottling: false,
     },
   });
-  overlayWin.setIgnoreMouseEvents(true);
   overlayWin.loadFile(path.join(__dirname, 'renderer/overlay.html'));
+  overlayWin.showInactive();
 }
 
 function showOverlay(state: 'recording' | 'processing'): void {
   if (!overlayWin) return;
-  const settings = loadSettings();
-  overlayWin.webContents.send('overlay:state', state, settings.micDeviceId || 'Микрофон');
-  overlayWin.showInactive();
+  setOverlayBounds('active');
+  overlayWin.webContents.send('overlay:state', state);
 }
 
 function hideOverlay(): void {
-  overlayWin?.hide();
+  if (!overlayWin) return;
+  setOverlayBounds('idle');
+  overlayWin.webContents.send('overlay:state', 'idle');
 }
 
 // ── Скрытое окно записи ───────────────────────────────────────────────────────
@@ -246,6 +254,20 @@ ipcMain.handle('history:get', () => getHistory());
 ipcMain.handle('history:delete', (_event, id: number) => deleteHistoryEntry(id));
 ipcMain.handle('history:clear', () => clearHistory());
 ipcMain.handle('clipboard:write', (_event, text: string) => clipboard.writeText(text));
+
+ipcMain.on('overlay:mic-click', () => {
+  if (!isRecording) {
+    isRecording = true;
+    playSound('mixkit-magic-notification-ring-2344.wav');
+    setTrayState('recording');
+    showOverlay('recording');
+    recorderWin?.webContents.send('recorder:start');
+  } else {
+    isRecording = false;
+    playSound('mixkit-magic-notification-ring-2344.wav');
+    recorderWin?.webContents.send('recorder:stop');
+  }
+});
 
 ipcMain.handle('settings:set', (_event, data) => {
   const current = loadSettings();

@@ -6,84 +6,60 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { background: transparent; width: 100%; height: 100%; overflow: hidden; user-select: none; }
 
+/* ── IDLE КНОПКА ──────────────────────────────────── */
+.idle-btn {
+  position: absolute;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  padding: 0 16px;
+  height: 38px;
+  background: rgba(14,12,24,0.82);
+  border: 1px solid rgba(155,125,255,0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 10px rgba(155,125,255,0.06);
+}
+.idle-btn:hover {
+  border-color: rgba(155,125,255,0.5);
+  background: rgba(18,14,32,0.92);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 20px rgba(155,125,255,0.22);
+}
+.idle-crystal {
+  transition: filter 0.25s, transform 0.25s;
+  filter: drop-shadow(0 0 5px rgba(180,155,255,0.7)) drop-shadow(0 0 10px rgba(155,125,255,0.4));
+}
+.idle-btn:hover .idle-crystal {
+  filter: drop-shadow(0 0 8px rgba(200,175,255,1)) drop-shadow(0 0 18px rgba(150,210,255,0.7));
+}
+.idle-btn:hover .ic-main { transform: translateY(-2px); }
+.idle-btn:hover .ic-left { transform: translateY(-1px) rotate(-4deg); }
+.idle-btn:hover .ic-right { transform: translateY(-1px) rotate(4deg); }
+.ic-main  { transition: transform 0.25s; }
+.ic-left  { transition: transform 0.25s; opacity: 0.75; }
+.ic-right { transition: transform 0.25s; opacity: 0.75; }
+
+/* ── АКТИВНЫЙ ПИЛЛ ────────────────────────────────── */
 .pill {
   position: absolute;
   bottom: 0; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 20px 0 16px;
-  height: 48px;
-  background: linear-gradient(135deg, rgba(18,15,30,0.92), rgba(24,18,42,0.95));
+  display: none;
+  align-items: center; gap: 10px;
+  padding: 0 22px 0 18px;
+  height: 52px;
+  background: linear-gradient(135deg, rgba(18,15,30,0.94), rgba(24,18,42,0.97));
   border: 1px solid rgba(155,125,255,0.35);
   border-radius: 28px;
-  backdrop-filter: blur(20px);
   box-shadow:
-    0 0 0 1px rgba(155,125,255,0.12),
-    0 8px 32px rgba(0,0,0,0.55),
-    0 0 24px rgba(155,125,255,0.12),
+    0 0 0 1px rgba(155,125,255,0.1),
+    0 8px 32px rgba(0,0,0,0.6),
+    0 0 28px rgba(155,125,255,0.15),
     inset 0 1px 0 rgba(255,255,255,0.06);
   white-space: nowrap;
-  transition: box-shadow 0.3s;
+  cursor: pointer;
 }
+.pill.active { display: flex; }
 
-/* Кристалл слева */
-.crystal-left {
-  position: absolute;
-  left: -18px; top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.9;
-  filter: drop-shadow(0 0 8px rgba(155,125,255,0.7)) drop-shadow(0 0 16px rgba(120,200,255,0.4));
-  animation: crystalFloat 3s ease-in-out infinite;
-}
-.crystal-right {
-  position: absolute;
-  right: -18px; top: 50%;
-  transform: translateY(-50%) scaleX(-1);
-  opacity: 0.9;
-  filter: drop-shadow(0 0 8px rgba(155,125,255,0.7)) drop-shadow(0 0 16px rgba(120,200,255,0.4));
-  animation: crystalFloat 3s ease-in-out infinite 0.5s;
-}
-@keyframes crystalFloat {
-  0%,100% { transform: translateY(-50%) translateY(0); }
-  50%      { transform: translateY(-50%) translateY(-3px); }
-}
-.crystal-right { animation: crystalFloatR 3s ease-in-out infinite 0.5s; }
-@keyframes crystalFloatR {
-  0%,100% { transform: translateY(-50%) scaleX(-1) translateY(0); }
-  50%      { transform: translateY(-50%) scaleX(-1) translateY(-3px); }
-}
-
-/* Индикатор */
-.dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  background: #e74c3c;
-  box-shadow: 0 0 6px rgba(231,76,60,0.8), 0 0 12px rgba(231,76,60,0.4);
-  animation: pulse-rec 1s ease-in-out infinite;
-}
-.dot.processing {
-  background: #9b7dff;
-  box-shadow: 0 0 6px rgba(155,125,255,0.8), 0 0 12px rgba(155,125,255,0.4);
-  animation: pulse-proc 1.2s ease-in-out infinite;
-}
-@keyframes pulse-rec  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-@keyframes pulse-proc { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-.label {
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: #c9b8ff;
-  letter-spacing: 0.02em;
-}
-.mic-name {
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 11px;
-  color: #4a5270;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* shimmer на бордере */
 .pill::before {
   content: '';
   position: absolute; inset: -1px;
@@ -98,47 +74,129 @@ html, body { background: transparent; width: 100%; height: 100%; overflow: hidde
   padding: 1px;
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.crystal-side {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(155,125,255,0.7)) drop-shadow(0 0 16px rgba(120,200,255,0.4));
+  animation: crystalFloat 3s ease-in-out infinite;
+}
+.crystal-side.right { animation: crystalFloatR 3s ease-in-out infinite 0.5s; }
+@keyframes crystalFloat  { 0%,100%{transform:translateY(0)}  50%{transform:translateY(-3px)} }
+@keyframes crystalFloatR { 0%,100%{transform:scaleX(-1) translateY(0)} 50%{transform:scaleX(-1) translateY(-3px)} }
+
+.dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #e74c3c;
+  box-shadow: 0 0 6px rgba(231,76,60,0.8), 0 0 12px rgba(231,76,60,0.4);
+  animation: pulseRec 1s ease-in-out infinite;
+}
+.dot.processing {
+  background: #9b7dff;
+  box-shadow: 0 0 6px rgba(155,125,255,0.8), 0 0 12px rgba(155,125,255,0.4);
+  animation: pulseProc 1.2s ease-in-out infinite;
+}
+@keyframes pulseRec  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+@keyframes pulseProc { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.pill-label {
+  font-family: -apple-system, 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: #c9b8ff; letter-spacing: 0.02em;
+}
+.pill-hint {
+  font-family: -apple-system, 'Inter', sans-serif;
+  font-size: 10px; color: #2e3550;
+}
 </style>
 </head>
 <body>
+
+<!-- Idle кнопка — кластер кристаллов -->
+<div class="idle-btn" id="idleBtn">
+  <!-- Маленький левый кристалл -->
+  <svg class="idle-crystal ic-left" width="8" height="16" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gl1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="gr1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#gl1)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#gr1)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.8"/>
+  </svg>
+  <!-- Главный центральный кристалл -->
+  <svg class="idle-crystal ic-main" width="12" height="22" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gl2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="gr2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#gl2)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#gr2)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.7"/>
+    <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.65)"/>
+  </svg>
+  <!-- Маленький правый кристалл -->
+  <svg class="idle-crystal ic-right" width="8" height="16" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gl3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="gr3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#gl3)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#gr3)" stroke="#4a3070" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.8"/>
+  </svg>
+</div>
+
+<!-- Активный пилл (запись / обработка) -->
 <div class="pill" id="pill">
-  <!-- Кристаллы по бокам -->
-  <svg class="crystal-left" width="14" height="26" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="ol" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient>
-      <linearGradient id="or" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient>
-    </defs>
-    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#ol)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#or)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="7,1 13,4 10,5 4,5" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.8"/>
-    <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.55)"/>
+  <svg class="crystal-side" width="12" height="22" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gl4" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="gr4" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#gl4)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#gr4)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.7"/>
   </svg>
 
   <div class="dot" id="dot"></div>
-  <span class="label" id="label">Запись...</span>
-  <span class="mic-name" id="micName"></span>
+  <span class="pill-label" id="pillLabel">Запись...</span>
+  <span class="pill-hint" id="pillHint">нажми для остановки</span>
 
-  <svg class="crystal-right" width="14" height="26" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#ol)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#or)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="7,1 13,4 10,5 4,5" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.8"/>
-    <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.55)"/>
+  <svg class="crystal-side right" width="12" height="22" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gl5" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9b7dff"/><stop offset="100%" stop-color="#b8a0ff"/></linearGradient><linearGradient id="gr5" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ddd5ff"/><stop offset="100%" stop-color="#f5f2ff"/></linearGradient></defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#gl5)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#gr5)" stroke="#4a3070" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#f5f2ff" stroke="#4a3070" stroke-width="0.7"/>
   </svg>
 </div>
 
 <script>
-  window.api.onOverlayState((state, micLabel) => {
-    const dot   = document.getElementById('dot');
-    const label = document.getElementById('label');
-    const name  = document.getElementById('micName');
-    if (state === 'recording') {
-      dot.className = 'dot';
-      label.textContent = 'Запись...';
+  const idleBtn  = document.getElementById('idleBtn');
+  const pill     = document.getElementById('pill');
+  const dot      = document.getElementById('dot');
+  const pillLabel = document.getElementById('pillLabel');
+  const pillHint  = document.getElementById('pillHint');
+
+  let currentState = 'idle';
+
+  // Клик по idle-кнопке → начать запись
+  idleBtn.addEventListener('click', () => {
+    window.api.overlayClick();
+  });
+
+  // Клик по пиллу во время записи → остановить
+  pill.addEventListener('click', () => {
+    if (currentState === 'recording') window.api.overlayClick();
+  });
+
+  window.api.onOverlayState((state) => {
+    currentState = state;
+    if (state === 'idle') {
+      pill.classList.remove('active');
+      idleBtn.style.display = 'flex';
     } else {
-      dot.className = 'dot processing';
-      label.textContent = 'Обработка...';
+      idleBtn.style.display = 'none';
+      pill.classList.add('active');
+      if (state === 'recording') {
+        dot.className = 'dot';
+        pillLabel.textContent = 'Запись...';
+        pillHint.textContent = 'нажми для остановки';
+        pill.style.cursor = 'pointer';
+      } else {
+        dot.className = 'dot processing';
+        pillLabel.textContent = 'Обработка...';
+        pillHint.textContent = '';
+        pill.style.cursor = 'default';
+      }
     }
-    if (name && micLabel) name.textContent = micLabel;
   });
 </script>
 </body>

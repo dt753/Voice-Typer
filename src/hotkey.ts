@@ -1,16 +1,32 @@
 import { globalShortcut } from 'electron';
 
 const DOUBLE_TAP_MS = 450;
+const KEY_RELEASE_GAP_MS = 500; // пауза >= 500мс = клавиша отпущена
 let lastTapTime = 0;
+let lastEventTime = 0;
+let keyHeld = false; // уже сработало — ждём отпускания
 let currentAccel = 'F9';
 let onDoubleTapCb: (() => void) | null = null;
 
 function doubleTapHandler() {
   const now = Date.now();
+  const gap = now - lastEventTime;
+  lastEventTime = now;
+
+  // Если пауза большая — клавишу отпустили, сбрасываем флаг зажатия
+  if (gap >= KEY_RELEASE_GAP_MS) {
+    keyHeld = false;
+  }
+
+  // Пока клавиша держится после срабатывания — игнорируем
+  if (keyHeld) return;
+
   const delta = now - lastTapTime;
   lastTapTime = now;
+
   if (delta < DOUBLE_TAP_MS) {
     lastTapTime = 0;
+    keyHeld = true; // блокируем повторы до отпускания
     onDoubleTapCb?.();
   }
 }

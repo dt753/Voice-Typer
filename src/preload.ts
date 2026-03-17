@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   clearHistory: () => ipcRenderer.invoke('history:clear'),
   onHistoryEntry: (cb: (entry: any) => void) =>
     ipcRenderer.on('history:entry', (_e, entry) => cb(entry)),
-  onOverlayState: (cb: (state: string, micLabel: string) => void) =>
-    ipcRenderer.on('overlay:state', (_e, state, micLabel) => cb(state, micLabel)),
+  onOverlayState: (cb: (state: string) => void) =>
+    ipcRenderer.on('overlay:state', (_e, state) => cb(state)),
+  overlayClick: () => ipcRenderer.send('overlay:mic-click'),
 });
