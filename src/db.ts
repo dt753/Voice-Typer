@@ -18,6 +18,7 @@ export interface AppSettings {
   replacements: Replacement[];
   dictionary: string[];
   customInstructions: string;
+  soundVolume: number;
 }
 
 export interface HistoryEntry {
@@ -37,6 +38,7 @@ const DEFAULTS: AppSettings = {
   replacements: [],
   dictionary: [],
   customInstructions: '',
+  soundVolume: 70,
 };
 
 let db: Database.Database;

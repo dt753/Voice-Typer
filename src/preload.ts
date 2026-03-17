@@ -21,12 +21,14 @@ contextBridge.exposeInMainWorld('api', {
     replacements: { from: string; to: string; preserveCase: boolean }[];
     dictionary: string[];
     customInstructions: string;
+    soundVolume: number;
   }): Promise<void> => ipcRenderer.invoke('settings:set', s),
 
   openExternal: (url: string) => shell.openExternal(url),
 
   suspendHotkey: () => ipcRenderer.invoke('hotkey:suspend'),
   resumeHotkey:  () => ipcRenderer.invoke('hotkey:resume'),
+  previewSound:  (vol: number) => ipcRenderer.invoke('sound:preview', vol),
 
   platform: process.platform,
 

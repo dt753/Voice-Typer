@@ -1,5 +1,5 @@
-appId: com.voicetyper.app
-productName: Voice Typer
+appId: com.crystalvoice.app
+productName: Crystal Voice
 copyright: Copyright © 2024
 
 directories:
@@ -9,6 +9,9 @@ files:
   - dist/**/*
   - node_modules/**/*
   - package.json
+  - assets/**/*
+
+icon: assets/icon.png
 
 # ── Windows ─────────────────────────────────────────────────────────────────
 win:
@@ -26,7 +29,7 @@ mac:
       arch: [x64, arm64]
 
 dmg:
-  title: Voice Typer
+  title: Crystal Voice
 
 # ── Общее ────────────────────────────────────────────────────────────────────
 extraMetadata:

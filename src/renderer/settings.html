@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Voice Typer — Настройки</title>
+<title>Crystal Voice — Настройки</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,7 +64,7 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 .vad-glow-thumb { position: absolute; top: 50%; transform: translate(-50%,-50%); pointer-events: none; z-index: 4; opacity: 0; transition: opacity 0.25s; }
 .vad-slider-wrap:hover .vad-glow-thumb, .vad-slider-wrap:active .vad-glow-thumb { opacity: 1; }
 .slider-label-sm { font-size: 11px; color: #2e3855; }
-.crystal-btn-wrap { position: relative; padding: 0 56px; margin: 4px -56px 0; }
+.crystal-btn-wrap { position: relative; padding: 0 56px; margin: 4px 0 0; }
 .save-btn { width: 100%; padding: 12px; border: 1px solid rgba(155,125,255,0.3); border-radius: 8px; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; position: relative; overflow: hidden; background: transparent; color: #c9b8ff; transition: all 0.3s; letter-spacing: 0.03em; }
 .save-btn::after { content: ''; position: absolute; top: -50%; left: -75%; width: 50%; height: 200%; background: rgba(255,255,255,0.06); transform: skewX(-20deg); transition: left 0.5s ease; }
 .save-btn:hover { border-color: rgba(155,125,255,0.6); color: #e0d4ff; transform: translateY(-1px); box-shadow: 0 4px 24px rgba(155,125,255,0.18); }
@@ -95,16 +95,16 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 .item-status { display: flex; align-items: center; gap: 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
 .item-status.status-ok { color: #3d7a55; } .item-status.status-error { color: #8b4055; } .item-status.status-skipped { color: #4a5270; }
 .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.item-actions { margin-left: auto; display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+.item-actions { margin-left: auto; display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; margin-right: 20px; flex-shrink: 0; }
 .history-item:hover .item-actions { opacity: 1; }
-.action-btn { font-size: 11px; font-family: 'Inter', sans-serif; padding: 4px 12px; border-radius: 5px; border: 1px solid rgba(155,125,255,0.2); background: transparent; color: #9b7dff; cursor: pointer; transition: all 0.15s; }
-.action-btn:hover { border-color: rgba(155,125,255,0.5); color: #c9b8ff; background: rgba(155,125,255,0.06); }
-.action-btn.danger { border-color: rgba(255,80,100,0.15); color: #7a4055; }
-.action-btn.danger:hover { border-color: rgba(255,80,100,0.5); color: #e06b6b; background: rgba(255,80,100,0.04); }
-.item-text { font-size: 13px; color: #8892b0; line-height: 1.6; font-weight: 300; }
+.action-btn { font-size: 11px; font-family: 'Inter', sans-serif; padding: 5px 14px; border: none; border-radius: 0; background: transparent; color: #9b7dff; cursor: pointer; transition: color 0.15s; position: relative; z-index: 1; }
+.action-btn:hover { color: #c9b8ff; }
+.action-btn.danger { color: #9b7dff; }
+.action-btn.danger:hover { color: #e06b6b; }
+.item-text { font-size: 13px; color: #8892b0; line-height: 1.6; font-weight: 300; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; padding-right: 20px; }
 .item-error { font-size: 12px; color: #8b4055; font-family: 'JetBrains Mono', monospace; }
-.clear-btn { font-size: 12px; font-family: 'Inter', sans-serif; padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); background: transparent; color: #4a5270; cursor: pointer; transition: all 0.2s; }
-.clear-btn:hover { border-color: rgba(255,80,100,0.35); color: #e06b6b; }
+.clear-btn { font-size: 12px; font-family: 'Inter', sans-serif; padding: 6px 14px; border: none; border-radius: 0; background: transparent; color: #4a5270; cursor: pointer; transition: color 0.2s; position: relative; z-index: 1; }
+.clear-btn:hover { color: #e06b6b; }
 .history-empty { text-align: center; padding: 40px; color: #2e3550; font-size: 13px; }
 .add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 9px; border-radius: 7px; border: 1px dashed rgba(155,125,255,0.2); background: transparent; color: #4a4870; font-size: 12px; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s; }
 .add-btn:hover { border-color: rgba(155,125,255,0.45); color: #9b7dff; background: rgba(155,125,255,0.04); }
@@ -114,7 +114,8 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 .pair-input:focus { border-color: rgba(155,125,255,0.35); color: #c9b8ff; }
 .pair-input::placeholder { color: #2e3550; }
 .arrow-sep { color: #2e3855; font-size: 14px; flex-shrink: 0; }
-.crystal-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 22px; height: 22px; }
+.crystal-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.crystal-btn.sq { width: 22px; height: 22px; min-width: 22px; min-height: 22px; }
 .crystal-frame { transition: opacity 0.15s; }
 .crystal-frame.hover-frame { opacity: 0; position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); pointer-events: none; }
 .crystal-btn:hover .crystal-frame.default-frame { opacity: 0; }
@@ -265,12 +266,12 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
   <div class="section-card">
     <div class="section-label">Язык</div>
     <div class="lang-grid">
-      <div class="lang-option" data-lang="ru">🇷🇺 Русский</div>
-      <div class="lang-option" data-lang="en">🇬🇧 English</div>
-      <div class="lang-option" data-lang="de">🇩🇪 Deutsch</div>
-      <div class="lang-option" data-lang="fr">🇫🇷 Français</div>
-      <div class="lang-option" data-lang="es">🇪🇸 Español</div>
-      <div class="lang-option" data-lang="auto">🌐 Авто</div>
+      <div class="lang-option" data-lang="ru">Русский</div>
+      <div class="lang-option" data-lang="en">English</div>
+      <div class="lang-option" data-lang="de">Deutsch</div>
+      <div class="lang-option" data-lang="fr">Français</div>
+      <div class="lang-option" data-lang="es">Español</div>
+      <div class="lang-option" data-lang="auto">Авто</div>
     </div>
   </div>
 
@@ -283,6 +284,50 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
       <span class="key-badge" id="SE_hotkeyBadge">F9</span>
     </div>
     <div class="field-sub">F1–F12, буква, цифра, стрелка или сочетание с Ctrl/Alt/Shift.</div>
+  </div>
+
+  <!-- ЗВУК -->
+  <div class="section-card">
+    <div class="section-label">Звук</div>
+    <div>
+      <div class="field-label" style="display:flex;align-items:center;justify-content:space-between;">
+        Громкость уведомлений —
+        <span id="SE_volVal" style="color:#9b7dff;font-family:'JetBrains Mono',monospace;font-size:12px;">70%</span>
+      </div>
+      <div class="vad-slider-wrap" id="SE_volWrap">
+        <div class="vad-track">
+          <div class="vad-fill" id="SE_volFill"></div>
+        </div>
+        <svg class="vad-glow-thumb" id="SE_volGlow" width="26" height="30" viewBox="-38 -24 76 72" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="SE_vg_glow2" cx="50%" cy="40%" r="60%"><stop offset="0%" stop-color="#d0c0ff" stop-opacity="0.9"/><stop offset="50%" stop-color="#9878e0" stop-opacity="0.5"/><stop offset="100%" stop-color="#6040c0" stop-opacity="0"/></radialGradient></defs>
+          <polygon points="-20,-18 20,-18 36,-4 20,10 0,44 -20,10 -36,-4 -12,-4 12,-4" fill="url(#SE_vg_glow2)"/>
+          <line x1="-36" y1="-4" x2="36" y2="-4" stroke="rgba(140,220,255,0.6)" stroke-width="1.5"/>
+        </svg>
+        <svg class="vad-crystal-thumb" id="SE_volThumb" width="26" height="30" viewBox="-38 -24 76 72" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="-20,-18  20,-18  12,-4  -12,-4" fill="rgba(240,236,255,0.45)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points="-20,-18  -36,-4  -12,-4  0,-18" fill="rgba(150,138,210,0.40)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points=" 20,-18   36,-4   12,-4  0,-18" fill="rgba(220,215,248,0.35)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <line x1="-36" y1="-4" x2="36" y2="-4" stroke="#2e2050" stroke-width="2.8"/>
+          <polygon points="-36,-4  -20,10  0,44" fill="rgba(110,100,185,0.38)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points="-20,10  -12,-4  0,44" fill="rgba(160,152,220,0.32)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points=" 12,-4   20,10  0,44" fill="rgba(195,188,235,0.30)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points=" 20,10   36,-4  0,44" fill="rgba(225,220,248,0.28)" stroke="#2e2050" stroke-width="2.2" stroke-linejoin="round"/>
+          <line x1="-12" y1="-4" x2="0" y2="44" stroke="#2e2050" stroke-width="2"/>
+          <line x1=" 12" y1="-4" x2="0" y2="44" stroke="#2e2050" stroke-width="2"/>
+          <line x1="-20" y1="10" x2="0" y2="44" stroke="#2e2050" stroke-width="1.7"/>
+          <line x1=" 20" y1="10" x2="0" y2="44" stroke="#2e2050" stroke-width="1.7"/>
+          <polygon points="2,-18 14,-18 8,-8 -1,-7" fill="rgba(255,255,255,0.80)"/>
+          <polygon points="26,-7 34,-4 26,2 20,-4" fill="rgba(255,255,255,0.65)"/>
+          <polygon points="22,2 32,0 18,18 12,12" fill="rgba(255,255,255,0.36)"/>
+        </svg>
+        <input class="vad-range" type="range" min="0" max="100" value="70" id="SE_volRange" oninput="updateVol(this.value)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span class="slider-label-sm">Тихо</span>
+        <button onclick="previewSound()" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid rgba(155,125,255,0.25);background:transparent;color:#9b7dff;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(155,125,255,0.5)'" onmouseout="this.style.borderColor='rgba(155,125,255,0.25)'">▶ Тест</button>
+        <span class="slider-label-sm right">Громко</span>
+      </div>
+    </div>
   </div>
 
   <!-- CRYSTAL SAVE BUTTON -->
@@ -355,7 +400,7 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
         <polygon points="10.5,1.5 14.5,4.5 12.5,5.5 10,3" fill="rgba(255,255,255,0.50)"/>
       </svg>
     </div>
-    <button class="clear-btn" id="HI_clearBtn">Очистить</button>
+    <div class="crystal-btn" id="HI_clearWrap"><button class="clear-btn" id="HI_clearBtn">Очистить</button></div>
   </div>
   <svg width="0" height="0" style="position:absolute;overflow:visible">
     <defs>
@@ -470,41 +515,7 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
       <div class="vocab-tags" id="IN_vocab-tags"></div>
       <div class="vocab-input-row">
         <input class="vocab-input" id="IN_vocab-input" placeholder="Добавить термин..." onkeydown="handleVocabKey(event)">
-        <div class="crystal-btn" id="IN_addTermBtn">
-          <svg class="crystal-frame default-frame" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);pointer-events:none;overflow:visible;">
-            <polygon points="3,0 19,0 22,3 22,19 19,22 3,22 0,19 0,3" fill="rgba(80,60,160,0.08)" stroke="none"/>
-            <polygon points="3,0 19,0 19,1.5 3,1.5" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="3,1.5 19,1.5 19,3 3,3" fill="#9888c8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="6,1.5 16,1.5 15.5,2.5 6.5,2.5" fill="rgba(255,255,255,0.38)"/>
-            <polygon points="3,19 19,19 19,22 3,22" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="0,3 1.5,3 1.5,19 0,19" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="1.5,3 3,3 3,19 1.5,19" fill="#b0a8d8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="19,3 20.5,3 20.5,19 19,19" fill="#ddd8f4" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="20.5,3 22,3 22,19 20.5,19" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="0,3 3,0 4,1 1,4" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="3,0 4,1 4,2 3.5,1" fill="rgba(255,255,255,0.42)"/>
-            <polygon points="19,0 22,3 21,4 18,1" fill="#ddd8f4" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="19,0 22,3 21.5,3 19.5,1" fill="rgba(255,255,255,0.45)"/>
-            <polygon points="0,19 3,22 4,21 1,18" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="19,22 22,19 21,18 18,21" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-          </svg>
-          <svg class="crystal-frame hover-frame" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);pointer-events:none;overflow:visible;">
-            <polygon points="3,0 19,0 22,3 22,19 19,22 3,22 0,19 0,3" fill="rgba(120,100,200,0.14)" stroke="none"/>
-            <polygon points="3,0 19,0 19,1.5 3,1.5" fill="#8878c8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="3,1.5 19,1.5 19,3 3,3" fill="#b0a8d8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="6,1.5 16,1.5 15.5,2.5 6.5,2.5" fill="rgba(255,255,255,0.50)"/>
-            <polygon points="3,19 19,19 19,22 3,22" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="0,3 1.5,3 1.5,19 0,19" fill="#8878c8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="1.5,3 3,3 3,19 1.5,19" fill="#ccc4ec" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="19,3 20.5,3 20.5,19 19,19" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="20.5,3 22,3 22,19 20.5,19" fill="#9888c8" stroke="#2e2050" stroke-width="0.7"/>
-            <polygon points="0,3 3,0 4,1 1,4" fill="#8878c8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="3,0 4,1 4,2 3.5,1" fill="rgba(255,255,255,0.55)"/>
-            <polygon points="19,0 22,3 21,4 18,1" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="19,0 22,3 21.5,3 19.5,1" fill="rgba(255,255,255,0.60)"/>
-            <polygon points="0,19 3,22 4,21 1,18" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-            <polygon points="19,22 22,19 21,18 18,21" fill="#9888c8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-          </svg>
+        <div class="crystal-btn sq" id="IN_addTermBtn">
           <button class="add-term-btn" onclick="addTag()">+</button>
         </div>
       </div>
@@ -607,7 +618,21 @@ function updateVad(v) {
   if (glow)  glow.style.left   = (pct * trackW) + 'px';
   if (val)   val.textContent   = (v / 1000).toFixed(3);
 }
-window.addEventListener('resize', () => { const r = document.getElementById('SE_vadRange'); if(r) updateVad(r.value); });
+window.addEventListener('resize', () => {
+  const r = document.getElementById('SE_vadRange'); if(r) updateVad(r.value);
+  const v = document.getElementById('SE_volRange'); if(v) updateVol(v.value);
+});
+
+function updateVol(v) {
+  v = parseInt(v);
+  const wrap  = document.getElementById('SE_volWrap'); if(!wrap) return;
+  const pct   = v / 100;
+  const trackW = wrap.offsetWidth;
+  if (document.getElementById('SE_volFill'))  document.getElementById('SE_volFill').style.width = (pct * 100) + '%';
+  if (document.getElementById('SE_volThumb')) document.getElementById('SE_volThumb').style.left  = (pct * trackW) + 'px';
+  if (document.getElementById('SE_volGlow'))  document.getElementById('SE_volGlow').style.left   = (pct * trackW) + 'px';
+  if (document.getElementById('SE_volVal'))   document.getElementById('SE_volVal').textContent   = v + '%';
+}
 
 // ══ MIC VISUALIZER ═══════════════════════════════
 let micStream = null, micAnalyser = null, micAnimFrame = null, micAudioCtx = null;
@@ -802,6 +827,62 @@ function spawnShards(wrap) {
 // ══ HISTORY ══════════════════════════════════════
 let localHistory = [];
 
+// ══ CRYSTAL BORDER SHIMMER (canvas-based for history buttons) ════
+const delAnimFrames = new Map();
+function drawDelBorder(wrap, sp) {
+  const isDanger = wrap.classList.contains('shimmer-danger');
+  const w = wrap.offsetWidth, h = wrap.offsetHeight; if (!w || !h) return;
+  let cv = wrap.querySelector('canvas.del-cborder');
+  if (!cv) { cv = document.createElement('canvas'); cv.className = 'del-cborder'; cv.style.cssText = 'position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);pointer-events:none;z-index:20;overflow:visible;'; wrap.appendChild(cv); }
+  const dpr = window.devicePixelRatio || 1, cw = w + 6, ch = h + 6;
+  cv.width = cw * dpr; cv.height = ch * dpr; cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const cut = 3, lw = 1.5, W = cw, H = ch;
+  const bright = isDanger ? '#f0c8c8' : '#ddd8f8', mid = isDanger ? '#c08888' : '#a898d8', dark = isDanger ? '#804050' : '#6858a8', corner1 = isDanger ? '#f8d8d8' : '#eeeaf8', shimC = isDanger ? 'rgba(255,210,210,0.95)' : 'rgba(240,235,255,0.95)';
+  const segs = [[cut,lw/2,W-cut,lw/2,null,'h'],[W-cut,lw/2,W-lw/2,cut,corner1,'diag'],[W-lw/2,cut,W-lw/2,H-cut,null,'v'],[W-cut,H-lw/2,W-lw/2,H-cut,mid,'diag'],[cut,H-lw/2,W-cut,H-lw/2,null,'h'],[lw/2,H-cut,cut,H-lw/2,dark,'diag'],[lw/2,cut,lw/2,H-cut,null,'v'],[lw/2,cut,cut,lw/2,bright,'diag']];
+  g.lineWidth = lw; g.lineCap = 'round'; const perim = 2 * (W + H);
+  segs.forEach(([x1,y1,x2,y2,fixColor,type]) => {
+    const mx = (x1+x2)/2, my = (y1+y2)/2;
+    let dist; if (my < cut+2) dist = mx/perim; else if (mx > W-cut-2) dist = (W+my)/perim; else if (my > H-cut-2) dist = (W+H+(W-mx))/perim; else dist = (2*W+H+(H-my))/perim;
+    let sa = 0; if (sp >= 0) { const diff = Math.abs(dist-sp); const d = Math.min(diff,1-diff); sa = Math.max(0,1-d/0.12); }
+    let sc; if (fixColor) sc = fixColor; else if (type === 'h') { const gr = g.createLinearGradient(x1,0,x2,0); gr.addColorStop(0,dark); gr.addColorStop(0.3,bright); gr.addColorStop(0.7,bright); gr.addColorStop(1,dark); sc = gr; } else { const gr = g.createLinearGradient(0,y1,0,y2); gr.addColorStop(0,bright); gr.addColorStop(1,dark); sc = gr; }
+    g.strokeStyle = sc; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+    if (sa > 0.01) { g.strokeStyle = shimC; g.globalAlpha = sa; g.lineWidth = lw+1.5; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); g.globalAlpha = 1; g.lineWidth = lw; }
+  });
+}
+function startDelShimmer(wrap, isDanger) {
+  if (delAnimFrames.has(wrap)) return;
+  if (isDanger) wrap.classList.add('shimmer-danger'); else wrap.classList.remove('shimmer-danger');
+  let sp = 0;
+  function animate() { sp = (sp + 0.004) % 1; drawDelBorder(wrap, sp); delAnimFrames.set(wrap, requestAnimationFrame(animate)); }
+  delAnimFrames.set(wrap, requestAnimationFrame(animate));
+}
+function stopDelShimmer(wrap) {
+  const id = delAnimFrames.get(wrap); if (id) cancelAnimationFrame(id); delAnimFrames.delete(wrap);
+  wrap.classList.remove('shimmer-active', 'shimmer-danger');
+}
+function drawStaticBorder(wrap) {
+  wrap.classList.remove('shimmer-danger');
+  drawDelBorder(wrap, -1);
+}
+function attachShimmer(wrap, isDanger) {
+  if (wrap._shimmerInit) return; wrap._shimmerInit = true;
+  // Draw static border once element is visible (use intersection observer)
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting && wrap.offsetWidth > 0) { drawStaticBorder(wrap); io.disconnect(); } });
+  }, { threshold: 0 });
+  io.observe(wrap);
+  wrap.addEventListener('mouseenter', () => {
+    wrap.classList.add('shimmer-active');
+    startDelShimmer(wrap, isDanger);
+  });
+  wrap.addEventListener('mouseleave', () => {
+    wrap.classList.remove('shimmer-active');
+    stopDelShimmer(wrap);
+    drawStaticBorder(wrap);
+  });
+}
+
 function renderHistoryEntry(entry) {
   const kb = entry.sizeBytes ? (entry.sizeBytes/1024).toFixed(1) : '—';
   const statusClass = 'status-' + (entry.status || 'ok');
@@ -828,8 +909,8 @@ function renderHistoryEntry(entry) {
       <span class="item-size">${kb} KB</span>
       <div class="item-status ${statusClass}"><div class="status-dot"></div>${statusLabel}</div>
       <div class="item-actions">
-        ${canCopy ? `<button class="action-btn copy-btn">Копировать</button>` : ''}
-        <button class="action-btn danger del-hist-btn">Удалить</button>
+        ${canCopy ? `<div class="crystal-btn"><button class="action-btn copy-btn">Копировать</button></div>` : ''}
+        <div class="crystal-btn"><button class="action-btn danger del-hist-btn">Удалить</button></div>
       </div>
     </div>
     ${bodyHTML}`;
@@ -846,6 +927,7 @@ function renderHistoryEntry(entry) {
         setTimeout(() => { copyBtn.textContent = o; copyBtn.style.color = ''; }, 1400);
       });
     });
+    attachShimmer(copyBtn.parentElement, false);
   }
   if (delBtn) {
     delBtn.addEventListener('click', () => {
@@ -856,6 +938,7 @@ function renderHistoryEntry(entry) {
         div.remove();
       }, 220);
     });
+    attachShimmer(delBtn.parentElement, true);
   }
   return div;
 }
@@ -891,43 +974,20 @@ document.getElementById('HI_clearBtn').addEventListener('click', () => {
   localHistory = [];
   renderHistory();
 });
+attachShimmer(document.getElementById('HI_clearWrap'), true);
+attachShimmer(document.getElementById('IN_addTermBtn'), false);
 
 // ══ REPLACEMENTS ═════════════════════════════════
 let replacements = [];
 
 function makeCrystalDelBtn() {
   const wrap = document.createElement('div');
-  wrap.className = 'crystal-btn';
-  wrap.innerHTML = `
-    <svg class="crystal-frame default-frame" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);pointer-events:none;overflow:visible;">
-      <polygon points="3,0 19,0 22,3 22,19 19,22 3,22 0,19 0,3" fill="rgba(80,60,160,0.08)" stroke="none"/>
-      <polygon points="3,0 19,0 19,1.5 3,1.5" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="3,1.5 19,1.5 19,3 3,3" fill="#9888c8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="3,19 19,19 19,22 3,22" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-      <polygon points="0,3 1.5,3 1.5,19 0,19" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-      <polygon points="1.5,3 3,3 3,19 1.5,19" fill="#b0a8d8" stroke="#2e2050" stroke-width="0.7"/>
-      <polygon points="19,3 20.5,3 20.5,19 19,19" fill="#ddd8f4" stroke="#2e2050" stroke-width="0.7"/>
-      <polygon points="20.5,3 22,3 22,19 20.5,19" fill="#6858a8" stroke="#2e2050" stroke-width="0.7"/>
-      <polygon points="0,3 3,0 4,1 1,4" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="19,0 22,3 21,4 18,1" fill="#ddd8f4" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="0,19 3,22 4,21 1,18" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="19,22 22,19 21,18 18,21" fill="#6858a8" stroke="#2e2050" stroke-width="0.7" stroke-linejoin="round"/>
-    </svg>
-    <svg class="crystal-frame hover-frame" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);pointer-events:none;overflow:visible;">
-      <polygon points="3,0 19,0 22,3 22,19 19,22 3,22 0,19 0,3" fill="rgba(80,60,160,0.10)" stroke="none"/>
-      <polygon points="3,0 19,0 19,1.5 3,1.5" fill="#a05060" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="3,1.5 19,1.5 19,3 3,3" fill="#c07080" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="3,19 19,19 19,22 3,22" fill="#a05060" stroke="#2e1030" stroke-width="0.7"/>
-      <polygon points="0,3 1.5,3 1.5,19 0,19" fill="#a05060" stroke="#2e1030" stroke-width="0.7"/>
-      <polygon points="1.5,3 3,3 3,19 1.5,19" fill="#d09090" stroke="#2e1030" stroke-width="0.7"/>
-      <polygon points="19,3 20.5,3 20.5,19 19,19" fill="#f0c8c8" stroke="#2e1030" stroke-width="0.7"/>
-      <polygon points="20.5,3 22,3 22,19 20.5,19" fill="#a05060" stroke="#2e1030" stroke-width="0.7"/>
-      <polygon points="0,3 3,0 4,1 1,4" fill="#a05060" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="19,0 22,3 21,4 18,1" fill="#f0c8c8" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="0,19 3,22 4,21 1,18" fill="#a05060" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-      <polygon points="19,22 22,19 21,18 18,21" fill="#a05060" stroke="#2e1030" stroke-width="0.7" stroke-linejoin="round"/>
-    </svg>
-    <button class="del-btn">✕</button>`;
+  wrap.className = 'crystal-btn sq';
+  const btn = document.createElement('button');
+  btn.className = 'del-btn';
+  btn.textContent = '✕';
+  wrap.appendChild(btn);
+  attachShimmer(wrap, true);
   return wrap;
 }
 
@@ -1054,6 +1114,11 @@ function handleLogout() {
 }
 
 // ══ INIT ═════════════════════════════════════════
+function previewSound() {
+  const vol = parseInt(document.getElementById('SE_volRange').value) / 100;
+  window.api.previewSound(vol);
+}
+
 async function init() {
   const s = await window.api.getSettings();
   document.getElementById('SE_apiKey').value = s.apiKey || '';
@@ -1063,6 +1128,9 @@ async function init() {
   range.value = Math.max(1, Math.min(50, sliderV));
   setTimeout(() => updateVad(range.value), 50);
   setHotkey(s.hotkey || 'F9');
+  const volRange = document.getElementById('SE_volRange');
+  volRange.value = s.soundVolume ?? 70;
+  setTimeout(() => updateVol(volRange.value), 50);
   await loadMicDevices(s.micDeviceId || '');
   startMicVisualizer();
 
@@ -1073,6 +1141,7 @@ async function init() {
       micDeviceId:  document.getElementById('SE_micDevice').value,
       vadThreshold: parseInt(range.value) / 1000,
       hotkey:       currentHotkey,
+      soundVolume:  parseInt(document.getElementById('SE_volRange').value),
     };
     await window.api.saveSettings(settings);
     crystalSaveFeedback(

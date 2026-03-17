@@ -101,11 +101,20 @@ function makeTrayIcon(r: number, g: number, b: number): Electron.NativeImage {
 
 let ICON: { idle: Electron.NativeImage; recording: Electron.NativeImage; processing: Electron.NativeImage };
 
+function playSound(file: string): void {
+  const s = loadSettings();
+  const vol = (s.soundVolume ?? 70) / 100;
+  const soundPath = path.join(__dirname, '../assets/sounds', file).replace(/\\/g, '/');
+  recorderWin?.webContents.executeJavaScript(
+    `(function(){ const a = new Audio(${JSON.stringify('file:///' + soundPath)}); a.volume = ${vol}; a.play().catch(()=>{}); })()`
+  );
+}
+
 function setTrayState(state: 'idle' | 'recording' | 'processing'): void {
   const labels = {
-    idle:       'Voice Typer — ожидание (2× Right Shift)',
-    recording:  'Voice Typer — 🔴 запись…',
-    processing: 'Voice Typer — ⏳ транскрипция…',
+    idle:       'Crystal Voice — ожидание (2× Right Shift)',
+    recording:  'Crystal Voice — 🔴 запись…',
+    processing: 'Crystal Voice — ⏳ транскрипция…',
   };
   tray?.setImage(ICON[state]);
   tray?.setToolTip(labels[state]);
@@ -115,7 +124,7 @@ function setTrayState(state: 'idle' | 'recording' | 'processing'): void {
 
 function buildTray(): void {
   tray = new Tray(ICON.idle);
-  tray.setToolTip('Voice Typer — ожидание (2× Right Shift)');
+  tray.setToolTip('Crystal Voice — ожидание (2× Right Shift)');
 
   const menu = Menu.buildFromTemplate([
     { label: 'Настройки…', click: openSettings },
@@ -161,7 +170,8 @@ function openSettings(): void {
   settingsWin = new BrowserWindow({
     width: 720,
     height: 780,
-    title: 'Voice Typer — Настройки',
+    title: 'Crystal Voice — Настройки',
+    icon: APP_ICON,
     resizable: true,
     minimizable: true,
     maximizable: true,
@@ -180,6 +190,12 @@ function openSettings(): void {
 
 // ── IPC обработчики ───────────────────────────────────────────────────────────
 
+ipcMain.handle('sound:preview', (_event, vol: number) => {
+  const soundPath = path.join(__dirname, '../assets/sounds/mixkit-magic-notification-ring-2344.wav').replace(/\\/g, '/');
+  recorderWin?.webContents.executeJavaScript(
+    `(function(){ const a = new Audio(${JSON.stringify('file:///' + soundPath)}); a.volume = ${vol}; a.play().catch(()=>{}); })()`
+  );
+});
 ipcMain.handle('hotkey:suspend', () => suspendHotkey());
 ipcMain.handle('hotkey:resume',  () => resumeHotkey());
 
@@ -233,11 +249,14 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
 
 // ── Запуск приложения ─────────────────────────────────────────────────────────
 
+const APP_ICON = path.join(__dirname, '../assets/icon.png');
+
 app.whenReady().then(() => {
   initDb();
 
+  const crystalIcon = nativeImage.createFromPath(APP_ICON).resize({ width: 32, height: 32 });
   ICON = {
-    idle:       makeTrayIcon(46, 204, 113),
+    idle:       crystalIcon,
     recording:  makeTrayIcon(231, 76, 60),
     processing: makeTrayIcon(243, 156, 18),
   };
@@ -257,10 +276,12 @@ app.whenReady().then(() => {
   startHotkeyListener(() => {
     if (!isRecording) {
       isRecording = true;
+      playSound('mixkit-magic-notification-ring-2344.wav');
       setTrayState('recording');
       recorderWin?.webContents.send('recorder:start');
     } else {
       isRecording = false;
+      playSound('mixkit-magic-notification-ring-2344.wav');
       recorderWin?.webContents.send('recorder:stop');
     }
   }, settings.hotkey);

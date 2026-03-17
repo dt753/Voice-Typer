@@ -1,9 +1,9 @@
 {
-  "name": "voice-typer",
+  "name": "crystal-voice",
   "version": "1.0.0",
   "description": "Voice-to-text for any app — Windows & Mac",
   "main": "dist/main.js",
-  "author": "Voice Typer",
+  "author": "Crystal Voice",
   "scripts": {
     "build": "tsc && node scripts/copy-renderer.js",
     "start": "npm run build && env -u ELECTRON_RUN_AS_NODE node node_modules/electron/cli.js .",
