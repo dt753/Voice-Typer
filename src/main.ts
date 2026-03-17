@@ -11,6 +11,7 @@ import {
   clipboard,
   screen,
 } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as zlib from 'zlib';
 import { startHotkeyListener, stopHotkeyListener, updateHotkey, suspendHotkey, resumeHotkey } from './hotkey';
@@ -446,6 +447,11 @@ app.whenReady().then(async () => {
   createOverlayWindow();
   createRecorderWindow();
   openSettings();
+
+  // 5.5 Авто-обновление (только в production)
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
 
   // 6. На macOS запрашиваем разрешение Accessibility для вставки текста
   if (process.platform === 'darwin') {

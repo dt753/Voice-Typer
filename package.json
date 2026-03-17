@@ -8,10 +8,38 @@
     "build": "tsc && node scripts/copy-renderer.js",
     "start": "npm run build && env -u ELECTRON_RUN_AS_NODE node node_modules/electron/cli.js .",
     "dist:win": "npm run build && electron-builder --win --publish never",
-    "dist:mac": "npm run build && electron-builder --mac --publish never"
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "release:win": "npm run build && electron-builder --win --publish always",
+    "release:mac": "npm run build && electron-builder --mac --publish always"
+  },
+  "build": {
+    "appId": "com.crystalvoice.app",
+    "productName": "Crystal Voice",
+    "directories": { "output": "release" },
+    "files": ["dist/**", "assets/**", "package.json"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Crystal Voice"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "dt753",
+      "repo": "Voice-Typer"
+    }
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
+    "electron-updater": "^6.8.3",
     "form-data": "^4.0.5",
     "node-fetch": "^2.7.0",
     "uiohook-napi": "^1.5.4"
