@@ -14,7 +14,7 @@ import * as zlib from 'zlib';
 import { startHotkeyListener, stopHotkeyListener, updateHotkey, suspendHotkey, resumeHotkey } from './hotkey';
 import { transcribe } from './transcriber';
 import { injectText } from './injector';
-import { initDb, loadSettings, saveSettings, addHistoryEntry, getHistory, Replacement } from './db';
+import { initDb, loadSettings, saveSettings, addHistoryEntry, getHistory, deleteHistoryEntry, clearHistory, Replacement } from './db';
 
 function applyReplacements(text: string, replacements: Replacement[]): string {
   let result = text;
@@ -203,6 +203,8 @@ ipcMain.handle('shell:openMicSettings', () => {
 
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('history:get', () => getHistory());
+ipcMain.handle('history:delete', (_event, id: number) => deleteHistoryEntry(id));
+ipcMain.handle('history:clear', () => clearHistory());
 
 ipcMain.handle('settings:set', (_event, data) => {
   const current = loadSettings();

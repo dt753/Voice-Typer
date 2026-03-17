@@ -22,6 +22,7 @@ export interface AppSettings {
 }
 
 export interface HistoryEntry {
+  id?: number;
   time: string;
   sizeBytes: number;
   status: 'ok' | 'error' | 'skipped';
@@ -115,7 +116,15 @@ export function addHistoryEntry(entry: HistoryEntry): void {
 
 export function getHistory(limit = 100): HistoryEntry[] {
   return db.prepare(`
-    SELECT time, sizeBytes, status, text, error
+    SELECT id, time, sizeBytes, status, text, error
     FROM history ORDER BY id DESC LIMIT ?
   `).all(limit) as HistoryEntry[];
+}
+
+export function deleteHistoryEntry(id: number): void {
+  db.prepare('DELETE FROM history WHERE id = ?').run(id);
+}
+
+export function clearHistory(): void {
+  db.prepare('DELETE FROM history').run();
 }

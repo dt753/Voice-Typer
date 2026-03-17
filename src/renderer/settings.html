@@ -945,6 +945,7 @@ function renderHistoryEntry(entry) {
         const idx = localHistory.indexOf(entry);
         if (idx !== -1) localHistory.splice(idx, 1);
         div.remove();
+        if (entry.id) window.api.deleteHistory(entry.id);
       }, 220);
     });
     attachShimmer(delBtn.parentElement, true);
@@ -982,6 +983,7 @@ window.api.onHistoryEntry(entry => {
 document.getElementById('HI_clearBtn').addEventListener('click', () => {
   localHistory = [];
   renderHistory();
+  window.api.clearHistory();
 });
 attachShimmer(document.getElementById('HI_clearWrap'), true);
 attachShimmer(document.getElementById('IN_addTermBtn'), false);

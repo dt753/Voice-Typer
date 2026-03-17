@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── History ──────────────────────────────────────────────────────────────
   getHistory: () => ipcRenderer.invoke('history:get'),
+  deleteHistory: (id: number) => ipcRenderer.invoke('history:delete', id),
+  clearHistory: () => ipcRenderer.invoke('history:clear'),
   onHistoryEntry: (cb: (entry: any) => void) =>
     ipcRenderer.on('history:entry', (_e, entry) => cb(entry)),
 });
