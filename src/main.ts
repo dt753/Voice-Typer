@@ -7,6 +7,7 @@ import {
   ipcMain,
   systemPreferences,
   session,
+  shell,
 } from 'electron';
 import * as path from 'path';
 import * as zlib from 'zlib';
@@ -192,6 +193,13 @@ ipcMain.handle('sound:preview', (_event, vol: number) => {
 });
 ipcMain.handle('hotkey:suspend', () => suspendHotkey());
 ipcMain.handle('hotkey:resume',  () => resumeHotkey());
+ipcMain.handle('shell:openMicSettings', () => {
+  if (process.platform === 'darwin') {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+  } else {
+    shell.openExternal('ms-settings:privacy-microphone');
+  }
+});
 
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('history:get', () => getHistory());

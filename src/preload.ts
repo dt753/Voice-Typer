@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('api', {
   suspendHotkey: () => ipcRenderer.invoke('hotkey:suspend'),
   resumeHotkey:  () => ipcRenderer.invoke('hotkey:resume'),
   previewSound:  (vol: number) => ipcRenderer.invoke('sound:preview', vol),
+  openMicSettings: () => ipcRenderer.invoke('shell:openMicSettings'),
 
   platform: process.platform,
 

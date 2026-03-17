@@ -217,6 +217,10 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
           </div>
           <span class="mic-db" id="SE_mic-db">— дБ</span>
         </div>
+        <div id="SE_mic-blocked" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:6px;display:none;align-items:center;justify-content:space-between;gap:10px;">
+          <span style="font-size:11px;color:#c0614a;">Микрофон заблокирован системой</span>
+          <button onclick="window.api.openMicSettings()" style="font-size:11px;padding:4px 10px;background:rgba(155,125,255,0.12);border:1px solid rgba(155,125,255,0.3);border-radius:5px;color:#c9b8ff;cursor:pointer;white-space:nowrap;">Открыть настройки</button>
+        </div>
       </div>
     </div>
 
@@ -652,10 +656,12 @@ async function startMicVisualizer() {
 }
 
 function animateMicReal() {
-  const bar   = document.getElementById('SE_mic-bar');
-  const dbLbl = document.getElementById('SE_mic-db');
-  const dot   = document.getElementById('SE_mic-dot');
-  const buf   = new Float32Array(micAnalyser.fftSize);
+  const bar     = document.getElementById('SE_mic-bar');
+  const dbLbl   = document.getElementById('SE_mic-db');
+  const dot     = document.getElementById('SE_mic-dot');
+  const blocked = document.getElementById('SE_mic-blocked');
+  const buf     = new Float32Array(micAnalyser.fftSize);
+  let silentFrames = 0;
   function loop() {
     micAnimFrame = requestAnimationFrame(loop);
     micAnalyser.getFloatTimeDomainData(buf);
@@ -672,6 +678,9 @@ function animateMicReal() {
     } else {
       if (dot) { dot.classList.add('silent'); dot.style.background = ''; }
     }
+    // Если микрофон молчит >3 сек — показываем кнопку открыть настройки
+    if (rms < 0.0001) { silentFrames++; } else { silentFrames = 0; }
+    if (blocked) blocked.style.display = silentFrames > 180 ? 'flex' : 'none';
   }
   loop();
 }
