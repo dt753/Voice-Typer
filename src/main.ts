@@ -9,6 +9,7 @@ import {
   session,
   shell,
   clipboard,
+  screen,
 } from 'electron';
 import * as path from 'path';
 import * as zlib from 'zlib';
@@ -48,6 +49,7 @@ if (process.platform === 'darwin') {
 let tray: Tray | null = null;
 let recorderWin: BrowserWindow | null = null;
 let settingsWin: BrowserWindow | null = null;
+let overlayWin: BrowserWindow | null = null;
 let isRecording = false;
 
 
@@ -138,6 +140,43 @@ function buildTray(): void {
   if (process.platform !== 'darwin') {
     tray.on('click', openSettings);
   }
+}
+
+// ── Оверлей записи ────────────────────────────────────────────────────────────
+
+function createOverlayWindow(): void {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  overlayWin = new BrowserWindow({
+    width: 360,
+    height: 64,
+    x: Math.round(width / 2 - 180),
+    y: height - 80,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: false,
+    resizable: false,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      backgroundThrottling: false,
+    },
+  });
+  overlayWin.setIgnoreMouseEvents(true);
+  overlayWin.loadFile(path.join(__dirname, 'renderer/overlay.html'));
+}
+
+function showOverlay(state: 'recording' | 'processing'): void {
+  if (!overlayWin) return;
+  const settings = loadSettings();
+  overlayWin.webContents.send('overlay:state', state, settings.micDeviceId || 'Микрофон');
+  overlayWin.showInactive();
+}
+
+function hideOverlay(): void {
+  overlayWin?.hide();
 }
 
 // ── Скрытое окно записи ───────────────────────────────────────────────────────
@@ -235,6 +274,7 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   }
 
   setTrayState('processing');
+  showOverlay('processing');
   try {
     const raw = await transcribe(audioBuffer, settings.apiKey, settings.language, settings.customInstructions, settings.dictionary);
     const text = applyReplacements(raw, settings.replacements);
@@ -250,6 +290,7 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
     settingsWin?.webContents.send('history:entry', entry);
   } finally {
     setTrayState('idle');
+    hideOverlay();
   }
 });
 
@@ -287,6 +328,7 @@ app.whenReady().then(async () => {
 
   // 5. Трей → скрытое окно записи → окно настроек
   buildTray();
+  createOverlayWindow();
   createRecorderWindow();
   openSettings();
 
@@ -305,6 +347,7 @@ app.whenReady().then(async () => {
       isRecording = true;
       playSound('mixkit-magic-notification-ring-2344.wav');
       setTrayState('recording');
+      showOverlay('recording');
       recorderWin?.webContents.send('recorder:start');
     } else {
       isRecording = false;

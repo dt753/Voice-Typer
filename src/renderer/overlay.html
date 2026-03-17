@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: transparent; width: 100%; height: 100%; overflow: hidden; user-select: none; }
+
+.pill {
+  position: absolute;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px 0 16px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(18,15,30,0.92), rgba(24,18,42,0.95));
+  border: 1px solid rgba(155,125,255,0.35);
+  border-radius: 28px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 0 0 1px rgba(155,125,255,0.12),
+    0 8px 32px rgba(0,0,0,0.55),
+    0 0 24px rgba(155,125,255,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  white-space: nowrap;
+  transition: box-shadow 0.3s;
+}
+
+/* Кристалл слева */
+.crystal-left {
+  position: absolute;
+  left: -18px; top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 8px rgba(155,125,255,0.7)) drop-shadow(0 0 16px rgba(120,200,255,0.4));
+  animation: crystalFloat 3s ease-in-out infinite;
+}
+.crystal-right {
+  position: absolute;
+  right: -18px; top: 50%;
+  transform: translateY(-50%) scaleX(-1);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 8px rgba(155,125,255,0.7)) drop-shadow(0 0 16px rgba(120,200,255,0.4));
+  animation: crystalFloat 3s ease-in-out infinite 0.5s;
+}
+@keyframes crystalFloat {
+  0%,100% { transform: translateY(-50%) translateY(0); }
+  50%      { transform: translateY(-50%) translateY(-3px); }
+}
+.crystal-right { animation: crystalFloatR 3s ease-in-out infinite 0.5s; }
+@keyframes crystalFloatR {
+  0%,100% { transform: translateY(-50%) scaleX(-1) translateY(0); }
+  50%      { transform: translateY(-50%) scaleX(-1) translateY(-3px); }
+}
+
+/* Индикатор */
+.dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: #e74c3c;
+  box-shadow: 0 0 6px rgba(231,76,60,0.8), 0 0 12px rgba(231,76,60,0.4);
+  animation: pulse-rec 1s ease-in-out infinite;
+}
+.dot.processing {
+  background: #9b7dff;
+  box-shadow: 0 0 6px rgba(155,125,255,0.8), 0 0 12px rgba(155,125,255,0.4);
+  animation: pulse-proc 1.2s ease-in-out infinite;
+}
+@keyframes pulse-rec  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+@keyframes pulse-proc { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.label {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c9b8ff;
+  letter-spacing: 0.02em;
+}
+.mic-name {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 11px;
+  color: #4a5270;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* shimmer на бордере */
+.pill::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: 28px;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(155,125,255,0.5) 30%,
+    rgba(200,180,255,0.8) 50%, rgba(155,125,255,0.5) 70%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  padding: 1px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+</head>
+<body>
+<div class="pill" id="pill">
+  <!-- Кристаллы по бокам -->
+  <svg class="crystal-left" width="14" height="26" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="ol" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient>
+      <linearGradient id="or" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient>
+    </defs>
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#ol)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#or)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.8"/>
+    <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.55)"/>
+  </svg>
+
+  <div class="dot" id="dot"></div>
+  <span class="label" id="label">Запись...</span>
+  <span class="mic-name" id="micName"></span>
+
+  <svg class="crystal-right" width="14" height="26" viewBox="0 0 14 26" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="7,1 4,5 4,21 7,25 10,21 10,5" fill="url(#ol)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="10,5 7,1 13,4 13,22 10,25 7,25 10,21" fill="url(#or)" stroke="#2e2050" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="7,1 13,4 10,5 4,5" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.8"/>
+    <polygon points="7.5,1.5 11.5,3.8 9.5,4.5 7,3" fill="rgba(255,255,255,0.55)"/>
+  </svg>
+</div>
+
+<script>
+  window.api.onOverlayState((state, micLabel) => {
+    const dot   = document.getElementById('dot');
+    const label = document.getElementById('label');
+    const name  = document.getElementById('micName');
+    if (state === 'recording') {
+      dot.className = 'dot';
+      label.textContent = 'Запись...';
+    } else {
+      dot.className = 'dot processing';
+      label.textContent = 'Обработка...';
+    }
+    if (name && micLabel) name.textContent = micLabel;
+  });
+</script>
+</body>
+</html>
