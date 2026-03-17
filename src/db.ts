@@ -21,6 +21,8 @@ export interface AppSettings {
   dictionary: string[];
   customInstructions: string;
   soundVolume: number;
+  overlayEnabled: boolean;
+  refreshToken: string;
 }
 
 export interface HistoryEntry {
@@ -44,6 +46,8 @@ const DEFAULTS: AppSettings = {
   dictionary: [],
   customInstructions: '',
   soundVolume: 70,
+  overlayEnabled: true,
+  refreshToken: '',
 };
 
 let db: Database.Database;

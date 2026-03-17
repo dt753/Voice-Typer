@@ -172,11 +172,12 @@ function createOverlayWindow(): void {
     },
   });
   overlayWin.loadFile(path.join(__dirname, 'renderer/overlay.html'));
-  overlayWin.showInactive();
+  if (loadSettings().overlayEnabled !== false) overlayWin.showInactive();
 }
 
 function showOverlay(state: 'recording' | 'processing'): void {
   if (!overlayWin) return;
+  if (!loadSettings().overlayEnabled) return;
   setOverlayBounds('active');
   overlayWin.webContents.send('overlay:state', state);
 }
@@ -185,6 +186,16 @@ function hideOverlay(): void {
   if (!overlayWin) return;
   setOverlayBounds('idle');
   overlayWin.webContents.send('overlay:state', 'idle');
+  if (!loadSettings().overlayEnabled) overlayWin.hide();
+}
+
+function applyOverlaySetting(enabled: boolean): void {
+  if (!overlayWin) return;
+  if (enabled) {
+    overlayWin.showInactive();
+  } else {
+    overlayWin.hide();
+  }
 }
 
 // ── Скрытое окно записи ───────────────────────────────────────────────────────
@@ -261,7 +272,7 @@ ipcMain.handle('auth:login', async (_event, { email, password }: { email: string
   });
   const data = await res.json() as any;
   if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка входа' };
-  saveSettings({ authToken: data.access_token, userEmail: email });
+  saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email });
   return { ok: true };
 });
 
@@ -273,13 +284,33 @@ ipcMain.handle('auth:register', async (_event, { email, password }: { email: str
   });
   const data = await res.json() as any;
   if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка регистрации' };
-  if (data.access_token) saveSettings({ authToken: data.access_token, userEmail: email });
+  if (data.access_token) saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email });
   return { ok: true, needConfirm: !data.access_token };
 });
 
 ipcMain.handle('auth:logout', () => {
-  saveSettings({ authToken: '', userEmail: '' });
+  saveSettings({ authToken: '', userEmail: '', refreshToken: '' });
 });
+
+const SUPABASE_URL = 'https://kmlmocplptxuqqfqoizd.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e';
+
+async function refreshAuthToken(): Promise<boolean> {
+  const settings = loadSettings();
+  if (!settings.refreshToken) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+      body: JSON.stringify({ refresh_token: settings.refreshToken }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json() as any;
+    if (!data.access_token) return false;
+    saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || settings.refreshToken });
+    return true;
+  } catch { return false; }
+}
 
 ipcMain.handle('auth:getSubscription', async () => {
   const settings = loadSettings();
@@ -335,6 +366,11 @@ ipcMain.handle('settings:set', (_event, data) => {
   if (data.micDeviceId !== undefined && data.micDeviceId !== current.micDeviceId) {
     recorderWin?.webContents.send('recorder:restart');
   }
+
+  // Показываем/скрываем overlay
+  if (data.overlayEnabled !== undefined && data.overlayEnabled !== current.overlayEnabled) {
+    applyOverlaySetting(data.overlayEnabled);
+  }
 });
 
 ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
@@ -348,10 +384,14 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
     return;
   }
 
+  // Обновляем токен заранее если есть refresh_token
+  if (settings.refreshToken) await refreshAuthToken();
+
   setTrayState('processing');
   showOverlay('processing');
   try {
-    const raw = await transcribe(audioBuffer, settings.authToken, settings.language, settings.customInstructions, settings.dictionary);
+    const fresh = loadSettings();
+    const raw = await transcribe(audioBuffer, fresh.authToken, fresh.language, fresh.customInstructions, fresh.dictionary);
     const text = applyReplacements(raw, settings.replacements);
     console.log(`[STT] "${text}"`);
     const entry = { time, sizeBytes, status: (text ? 'ok' : 'skipped') as 'ok' | 'skipped', text: text || '(пусто)' };

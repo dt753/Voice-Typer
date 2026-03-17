@@ -347,6 +347,18 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
         <span class="slider-label-sm right">Громко</span>
       </div>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="field-label">Overlay при записи</div>
+        <div style="font-size:11px;color:#3a4568;margin-top:2px;">Показывать пилюлю внизу экрана</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;">
+        <input type="checkbox" id="SE_overlayToggle" style="opacity:0;width:0;height:0;" onchange="onOverlayToggle(this.checked)">
+        <span id="SE_overlayTrack" style="position:absolute;inset:0;border-radius:10px;background:#1a1d27;border:1px solid rgba(155,125,255,0.2);cursor:pointer;transition:background 0.2s,border-color 0.2s;">
+          <span id="SE_overlayThumb" style="position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#3a4568;transition:transform 0.2s,background 0.2s;"></span>
+        </span>
+      </label>
+    </div>
   </div>
 
   <!-- CRYSTAL SAVE BUTTON -->
@@ -1245,6 +1257,23 @@ function handleLogout() {
   document.getElementById('AC_password').value = '';
 }
 
+// ══ OVERLAY TOGGLE ═══════════════════════════════
+function setOverlayToggleUI(enabled) {
+  const thumb = document.getElementById('SE_overlayThumb');
+  const track = document.getElementById('SE_overlayTrack');
+  const cb    = document.getElementById('SE_overlayToggle');
+  if (!thumb || !track || !cb) return;
+  cb.checked = enabled;
+  thumb.style.transform = enabled ? 'translateX(16px)' : 'translateX(0)';
+  thumb.style.background = enabled ? '#9b7dff' : '#3a4568';
+  track.style.borderColor = enabled ? 'rgba(155,125,255,0.5)' : 'rgba(155,125,255,0.2)';
+  track.style.background  = enabled ? 'rgba(155,125,255,0.12)' : '#1a1d27';
+}
+async function onOverlayToggle(enabled) {
+  setOverlayToggleUI(enabled);
+  await window.api.saveSettings({ overlayEnabled: enabled });
+}
+
 // ══ INIT ═════════════════════════════════════════
 function previewSound() {
   const vol = parseInt(document.getElementById('SE_volRange').value) / 100;
@@ -1384,6 +1413,7 @@ async function init() {
   const volRange = document.getElementById('SE_volRange');
   volRange.value = s.soundVolume ?? 70;
   setTimeout(() => updateVol(volRange.value), 50);
+  setOverlayToggleUI(s.overlayEnabled !== false);
   await loadMicDevices(s.micDeviceId || '');
 
   document.getElementById('SE_saveBtn').addEventListener('click', async () => {
