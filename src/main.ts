@@ -316,9 +316,11 @@ async function refreshAuthToken(): Promise<boolean> {
 ipcMain.handle('auth:getSubscription', async () => {
   const settings = loadSettings();
   if (!settings.authToken) return null;
+  if (settings.refreshToken) await refreshAuthToken();
   try {
+    const fresh = loadSettings();
     const res = await fetch(`${SERVER_URL}/subscription`, {
-      headers: { Authorization: `Bearer ${settings.authToken}` },
+      headers: { Authorization: `Bearer ${fresh.authToken}` },
     });
     if (!res.ok) return null;
     return await res.json();
