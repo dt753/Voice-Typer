@@ -10,6 +10,7 @@ import {
   shell,
   clipboard,
   screen,
+  dialog,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
@@ -453,7 +454,22 @@ app.whenReady().then(async () => {
 
   // 5.5 Авто-обновление (только в production)
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates();
+    autoUpdater.on('update-downloaded', () => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win) {
+        dialog.showMessageBox(win, {
+          type: 'info',
+          title: 'Crystal Voice — обновление',
+          message: 'Новая версия скачана',
+          detail: 'Перезапустить приложение для установки обновления?',
+          buttons: ['Перезапустить', 'Позже'],
+          defaultId: 0,
+        }).then(({ response }) => {
+          if (response === 0) autoUpdater.quitAndInstall();
+        });
+      }
+    });
   }
 
   // 6. На macOS запрашиваем разрешение Accessibility для вставки текста
