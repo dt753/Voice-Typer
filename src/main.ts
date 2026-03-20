@@ -474,9 +474,20 @@ app.whenReady().then(async () => {
 
   // 6. На macOS запрашиваем разрешение Accessibility для вставки текста
   if (process.platform === 'darwin') {
-    const trusted = systemPreferences.isTrustedAccessibilityClient(true);
+    const trusted = systemPreferences.isTrustedAccessibilityClient(false);
     if (!trusted) {
-      console.warn('[WARN] Нужно разрешение Accessibility → Системные настройки → Конфиденциальность → Универсальный доступ.');
+      dialog.showMessageBox({
+        type: 'warning',
+        title: 'Нужно разрешение',
+        message: 'Crystal Voice нужен доступ к Универсальному доступу',
+        detail: 'Откройте Системные настройки → Конфиденциальность и безопасность → Универсальный доступ → добавьте Crystal Voice.\n\nБез этого вставка текста не будет работать.',
+        buttons: ['Открыть настройки', 'Позже'],
+        defaultId: 0,
+      }).then(({ response }) => {
+        if (response === 0) {
+          systemPreferences.isTrustedAccessibilityClient(true);
+        }
+      });
     }
   }
 

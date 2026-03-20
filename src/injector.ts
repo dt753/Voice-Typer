@@ -10,7 +10,7 @@ export function injectText(text: string): void {
   setTimeout(() => {
     if (process.platform === 'darwin') {
       // На macOS используем AppleScript — надёжнее uiohook
-      exec(`osascript -e 'tell application "System Events" to keystroke "v" using command down'`, (err) => {
+      exec(`osascript -e 'tell application "System Events" to keystroke "v" using {command down}'`, (err) => {
         if (err) console.error('[INJECT] osascript ошибка:', err.message);
         else console.log('[INJECT] paste отправлен (osascript)');
       });
@@ -25,5 +25,5 @@ export function injectText(text: string): void {
     setTimeout(() => {
       try { clipboard.writeText(prev); } catch {}
     }, 2000);
-  }, 100);
+  }, process.platform === 'darwin' ? 300 : 100);
 }
