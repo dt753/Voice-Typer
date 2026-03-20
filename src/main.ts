@@ -248,7 +248,7 @@ function openSettings(): void {
 // ── IPC обработчики ───────────────────────────────────────────────────────────
 
 ipcMain.handle('sound:preview', (_event, vol: number) => {
-  const soundPath = path.join(__dirname, '../assets/sounds/mixkit-magic-notification-ring-2344.wav').replace(/\\/g, '/');
+  const soundPath = path.join(__dirname, '../assets/sounds/chime-start.wav').replace(/\\/g, '/');
   recorderWin?.webContents.executeJavaScript(
     `(function(){ const a = new Audio(${JSON.stringify('file:///' + soundPath)}); a.volume = ${vol}; a.play().catch(()=>{}); })()`
   );
@@ -347,13 +347,13 @@ ipcMain.handle('clipboard:write', (_event, text: string) => clipboard.writeText(
 ipcMain.on('overlay:mic-click', () => {
   if (!isRecording) {
     isRecording = true;
-    playSound('mixkit-magic-notification-ring-2344.wav');
+    playSound('chime-start.wav');
     setTrayState('recording');
     showOverlay('recording');
     recorderWin?.webContents.send('recorder:start');
   } else {
     isRecording = false;
-    playSound('mixkit-magic-notification-ring-2344.wav');
+    playSound('chime-start.wav');
     recorderWin?.webContents.send('recorder:stop');
   }
 });
@@ -485,13 +485,13 @@ app.whenReady().then(async () => {
   startHotkeyListener(() => {
     if (!isRecording) {
       isRecording = true;
-      playSound('mixkit-magic-notification-ring-2344.wav');
+      playSound('chime-start.wav');
       setTrayState('recording');
       showOverlay('recording');
       recorderWin?.webContents.send('recorder:start');
     } else {
       isRecording = false;
-      playSound('mixkit-magic-notification-ring-2344.wav');
+      playSound('chime-start.wav');
       recorderWin?.webContents.send('recorder:stop');
     }
   }, settings.hotkey);

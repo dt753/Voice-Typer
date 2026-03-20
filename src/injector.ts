@@ -1,26 +1,26 @@
 import { clipboard } from 'electron';
 import { uIOhook, UiohookKey } from 'uiohook-napi';
+import { exec } from 'child_process';
 
-/**
- * Вставляет текст в активное окно:
- * 1. Сохраняем текущий буфер обмена
- * 2. Пишем текст в буфер
- * 3. Инжектируем Ctrl+V через uiohook (драйверный уровень, не зависит от фокуса)
- * 4. Восстанавливаем буфер через 2 секунды
- */
 export function injectText(text: string): void {
   const prev = clipboard.readText();
   clipboard.writeText(text);
   console.log(`[INJECT] Буфер обмена записан (${text.length} симв.), вставка…`);
 
   setTimeout(() => {
-    try {
-      // Mac: Cmd+V, Windows/Linux: Ctrl+V
-      const mod = process.platform === 'darwin' ? UiohookKey.Meta : UiohookKey.Ctrl;
-      uIOhook.keyTap(UiohookKey.V, [mod]);
-      console.log('[INJECT] paste отправлен');
-    } catch (err: any) {
-      console.error('[INJECT] Ошибка:', err.message);
+    if (process.platform === 'darwin') {
+      // На macOS используем AppleScript — надёжнее uiohook
+      exec(`osascript -e 'tell application "System Events" to keystroke "v" using command down'`, (err) => {
+        if (err) console.error('[INJECT] osascript ошибка:', err.message);
+        else console.log('[INJECT] paste отправлен (osascript)');
+      });
+    } else {
+      try {
+        uIOhook.keyTap(UiohookKey.V, [UiohookKey.Ctrl]);
+        console.log('[INJECT] paste отправлен (uiohook)');
+      } catch (err: any) {
+        console.error('[INJECT] Ошибка:', err.message);
+      }
     }
     setTimeout(() => {
       try { clipboard.writeText(prev); } catch {}
