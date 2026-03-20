@@ -454,6 +454,10 @@ app.whenReady().then(async () => {
 
   // 5.5 Авто-обновление (только в production)
   if (app.isPackaged) {
+    autoUpdater.on('checking-for-update', () => console.log('[UPDATE] Проверка обновлений...'));
+    autoUpdater.on('update-available', (info) => console.log('[UPDATE] Доступно:', info.version));
+    autoUpdater.on('update-not-available', () => console.log('[UPDATE] Обновлений нет'));
+    autoUpdater.on('error', (e) => console.error('[UPDATE] Ошибка:', e.message));
     autoUpdater.checkForUpdates();
     autoUpdater.on('update-downloaded', () => {
       const win = BrowserWindow.getAllWindows()[0];
