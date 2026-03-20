@@ -34,7 +34,8 @@
     "publish": {
       "provider": "github",
       "owner": "dt753",
-      "repo": "Voice-Typer"
+      "repo": "Voice-Typer",
+      "releaseType": "release"
     }
   },
   "dependencies": {
