@@ -1353,7 +1353,12 @@ async function loadAuthState() {
   };
   nameInput.onkeydown = (e) => { if (e.key === 'Enter') nameInput.blur(); };
 
-  const sub = await window.api.getSubscription();
+  let sub = await window.api.getSubscription();
+  // Railway может спать — если первый запрос не вернул данные, повторить через 6 секунд
+  if (!sub || !sub.subscription) {
+    await new Promise(r => setTimeout(r, 6000));
+    sub = await window.api.getSubscription();
+  }
   const badge = document.getElementById('AC_plan-badge');
   const until = document.getElementById('AC_plan-until');
   const subBlock = document.getElementById('AC_sub-block');

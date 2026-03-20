@@ -166,6 +166,7 @@ function createOverlayWindow(): void {
     skipTaskbar: true,
     focusable: true,
     resizable: false,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
