@@ -127,7 +127,17 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Реферальный код уже использован' });
   }
 
-  // Активируем 1 месяц тому, кто ввёл код
+  // 1. Сначала помечаем referred_by — защита от повторного использования
+  const { error: refByError } = await supabase
+    .from('profiles')
+    .update({ referred_by: code })
+    .eq('id', req.user.id);
+
+  if (refByError) {
+    return res.status(500).json({ error: 'Ошибка при активации кода' });
+  }
+
+  // 2. Активируем +1 месяц тому, кто ввёл код
   const { data: mySub } = await supabase
     .from('subscriptions')
     .select('current_period_end')
@@ -144,12 +154,7 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
     .upsert({ user_id: req.user.id, status: 'active', current_period_end: myBase.toISOString() },
              { onConflict: 'user_id' });
 
-  await supabase
-    .from('profiles')
-    .update({ referred_by: code })
-    .eq('id', req.user.id);
-
-  // Награда рефереру — тоже +1 месяц
+  // 3. Награда рефереру — тоже +1 месяц
   const { data: refSub } = await supabase
     .from('subscriptions')
     .select('current_period_end')
