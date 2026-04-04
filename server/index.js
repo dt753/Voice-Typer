@@ -5,7 +5,6 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { createClient } = require('@supabase/supabase-js');
 const OpenAI = require('openai');
-const FormData = require('form-data');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -101,11 +100,13 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: 'Код не указан' });
 
+  const normalizedCode = code.trim().toLowerCase();
+
   // Проверяем что код существует и ещё не использован
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('id, referral_code')
-    .eq('referral_code', code)
+    .eq('referral_code', normalizedCode)
     .single();
 
   if (error || !profile) {
@@ -130,7 +131,7 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
   // 1. Сначала помечаем referred_by — защита от повторного использования
   const { error: refByError } = await supabase
     .from('profiles')
-    .update({ referred_by: code })
+    .update({ referred_by: normalizedCode })
     .eq('id', req.user.id);
 
   if (refByError) {
@@ -147,7 +148,7 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
   const myBase = mySub?.current_period_end && new Date(mySub.current_period_end) > new Date()
     ? new Date(mySub.current_period_end)
     : new Date();
-  myBase.setMonth(myBase.getMonth() + 1);
+  myBase.setDate(myBase.getDate() + 30);
 
   await supabase
     .from('subscriptions')
@@ -164,7 +165,7 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
   const refBase = refSub?.current_period_end && new Date(refSub.current_period_end) > new Date()
     ? new Date(refSub.current_period_end)
     : new Date();
-  refBase.setMonth(refBase.getMonth() + 1);
+  refBase.setDate(refBase.getDate() + 30);
 
   await supabase
     .from('subscriptions')
