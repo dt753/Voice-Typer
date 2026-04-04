@@ -80,6 +80,8 @@ const CODE_TO_UIOHOOK: Record<string, number> = {
 
 let pttMode = false;
 let pttHeld = false;
+let pttSuspended = false; // временно игнорируем события (захват новой клавиши)
+let pttKeycode: number | null = null; // текущий keycode PTT — обновляется без перезапуска хука
 let uiohookRunning = false;
 let onPttStartCb: (() => void) | null = null;
 let onPttStopCb:  (() => void) | null = null;
@@ -88,19 +90,36 @@ function getPttKeycode(code: string): number | null {
   return CODE_TO_UIOHOOK[code] ?? null;
 }
 
-function startUiohook(): void {
+// uiohook запускается один раз при входе в PTT-режим и НЕ останавливается
+// до выхода из него — перезапуск ломает нативный callback в Electron.
+function startPttHook(onStart: () => void, onStop: () => void): void {
   if (uiohookRunning) return;
+
+  uIOhook.on('keydown', (e) => {
+    if (pttSuspended || e.keycode !== pttKeycode || pttHeld) return;
+    pttHeld = true;
+    onStart();
+  });
+
+  uIOhook.on('keyup', (e) => {
+    if (pttSuspended || e.keycode !== pttKeycode || !pttHeld) return;
+    pttHeld = false;
+    onStop();
+  });
+
   uIOhook.start();
   uiohookRunning = true;
+  console.log(`[HOTKEY] uiohook запущен (PTT)`);
 }
 
-function stopUiohook(): void {
+function stopPttHook(): void {
   if (!uiohookRunning) return;
   uIOhook.removeAllListeners('keydown');
   uIOhook.removeAllListeners('keyup');
   uIOhook.stop();
   uiohookRunning = false;
   pttHeld = false;
+  pttSuspended = false;
 }
 
 function doubleTapHandler() {
@@ -150,30 +169,19 @@ type HotkeyMode = 'double-tap' | 'push-to-talk';
 
 let currentPttKey = ''; // e.code формат, пустой = используем currentAccel
 
-function activatePtt(onStart: () => void, onStop: () => void): void {
-  // Убираем старые слушатели перед добавлением новых (предотвращает дубли)
-  uIOhook.removeAllListeners('keydown');
-  uIOhook.removeAllListeners('keyup');
+function enterPttMode(): void {
   const keycode = getPttKeycode(currentPttKey || currentAccel);
   if (keycode === null) {
-    console.warn(`[HOTKEY] Push-to-talk: клавиша "${currentAccel}" не поддерживается, используйте F1–F12`);
+    console.warn(`[HOTKEY] PTT: клавиша не поддерживается, используйте F1–F12 или модификаторы`);
     return;
   }
-
-  uIOhook.on('keydown', (e) => {
-    if (e.keycode !== keycode || pttHeld) return;
-    pttHeld = true;
-    onStart();
-  });
-
-  uIOhook.on('keyup', (e) => {
-    if (e.keycode !== keycode || !pttHeld) return;
-    pttHeld = false;
-    onStop();
-  });
-
-  startUiohook();
-  console.log(`[HOTKEY] Push-to-talk активен. Удержание "${currentAccel}" — запись.`);
+  pttKeycode = keycode;
+  pttSuspended = false;
+  pttHeld = false;
+  if (onPttStartCb && onPttStopCb) {
+    startPttHook(onPttStartCb, onPttStopCb);
+  }
+  console.log(`[HOTKEY] PTT активен, keycode=${pttKeycode}`);
 }
 
 export function startHotkeyListener(
@@ -191,8 +199,8 @@ export function startHotkeyListener(
   currentPttKey  = pttKey;
   pttMode        = mode === 'push-to-talk';
 
-  if (pttMode && onPttStart && onPttStop) {
-    activatePtt(onPttStart, onPttStop);
+  if (pttMode) {
+    enterPttMode();
   } else {
     register(currentAccel);
     console.log(`[HOTKEY] Запущен. Двойной тап "${currentAccel}" — триггер.`);
@@ -205,8 +213,13 @@ export function updateHotkey(hotkey: string): void {
   lastTapTime  = 0;
 
   if (pttMode) {
-    stopUiohook();
-    if (onPttStartCb && onPttStopCb) activatePtt(onPttStartCb, onPttStopCb);
+    // Обновляем keycode без перезапуска хука
+    const keycode = getPttKeycode(currentPttKey || currentAccel);
+    if (keycode !== null) {
+      pttKeycode = keycode;
+      pttHeld = false;
+      console.log(`[HOTKEY] PTT keycode → ${pttKeycode}`);
+    }
   } else {
     try { globalShortcut.unregister(oldAccel); } catch {}
     register(currentAccel);
@@ -217,8 +230,13 @@ export function updateHotkey(hotkey: string): void {
 export function updatePttKey(pttKey: string): void {
   currentPttKey = pttKey;
   if (pttMode) {
-    stopUiohook();
-    if (onPttStartCb && onPttStopCb) activatePtt(onPttStartCb, onPttStopCb);
+    // Просто обновляем keycode — хук продолжает работать
+    const keycode = getPttKeycode(currentPttKey || currentAccel);
+    if (keycode !== null) {
+      pttKeycode = keycode;
+      pttHeld = false;
+      console.log(`[HOTKEY] PTT key → "${pttKey}", keycode=${pttKeycode}`);
+    }
   }
 }
 
@@ -227,28 +245,33 @@ export function updateHotkeyMode(mode: HotkeyMode): void {
 
   if (pttMode) {
     try { globalShortcut.unregister(currentAccel); } catch {}
-    if (onPttStartCb && onPttStopCb) activatePtt(onPttStartCb, onPttStopCb);
+    enterPttMode();
   } else {
-    stopUiohook();
+    stopPttHook();
     register(currentAccel);
   }
   console.log(`[HOTKEY] Режим → "${mode}"`);
 }
 
 export function suspendHotkey(): void {
-  if (pttMode) stopUiohook();
-  else try { globalShortcut.unregister(currentAccel); } catch {}
+  if (pttMode) {
+    // Только приостанавливаем обработку — хук продолжает работать
+    pttSuspended = true;
+    pttHeld = false;
+  } else {
+    try { globalShortcut.unregister(currentAccel); } catch {}
+  }
 }
 
 export function resumeHotkey(): void {
   if (pttMode) {
-    if (onPttStartCb && onPttStopCb) activatePtt(onPttStartCb, onPttStopCb);
+    pttSuspended = false;
   } else {
     register(currentAccel);
   }
 }
 
 export function stopHotkeyListener(): void {
-  stopUiohook();
+  stopPttHook();
   globalShortcut.unregisterAll();
 }
