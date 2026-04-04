@@ -14,6 +14,7 @@ export interface AppSettings {
   micDeviceId: string;
   vadThreshold: number;
   hotkey: string;
+  hotkeyMode: 'double-tap' | 'push-to-talk';
   replacements: Replacement[];
   dictionary: string[];
   customInstructions: string;
@@ -25,6 +26,7 @@ const DEFAULTS: AppSettings = {
   micDeviceId: '',
   vadThreshold: 0.008,
   hotkey: 'F9',
+  hotkeyMode: 'double-tap',
   replacements: [],
   dictionary: [],
   customInstructions: '',
