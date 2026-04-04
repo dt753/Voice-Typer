@@ -1470,7 +1470,18 @@ async function loadAuthState() {
   };
   nameInput.onkeydown = (e) => { if (e.key === 'Enter') nameInput.blur(); };
 
-  let sub = await window.api.getSubscription();
+  // Грузим подписку и статистику параллельно
+  let [sub, stats] = await Promise.all([
+    window.api.getSubscription(),
+    window.api.getStats(),
+  ]);
+
+  // Показываем статистику сразу — она локальная, не ждёт сервер
+  const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+  document.getElementById('ST_today-words').textContent = fmt(stats.todayWords);
+  document.getElementById('ST_total-words').textContent = fmt(stats.totalWords);
+  document.getElementById('ST_time-saved').textContent  = fmt(stats.timeSavedMinutes);
+
   // Railway может спать — если первый запрос не вернул данные, повторить через 6 секунд
   if (!sub || !sub.subscription) {
     await new Promise(r => setTimeout(r, 6000));
@@ -1497,12 +1508,6 @@ async function loadAuthState() {
     document.getElementById('AC_my-ref').textContent = sub.referral_code;
   }
 
-  // Статистика
-  const stats = await window.api.getStats();
-  const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
-  document.getElementById('ST_today-words').textContent = fmt(stats.todayWords);
-  document.getElementById('ST_total-words').textContent = fmt(stats.totalWords);
-  document.getElementById('ST_time-saved').textContent  = fmt(stats.timeSavedMinutes);
 }
 
 function copyRefCode() {
