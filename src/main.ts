@@ -339,6 +339,22 @@ ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
   });
   return await res.json();
 });
+ipcMain.handle('app:version', () => app.getVersion());
+
+ipcMain.handle('update:check', async () => {
+  if (process.platform === 'darwin') {
+    // На Mac открываем страницу релизов — авто-обновление без подписи недоступно
+    shell.openExternal('https://github.com/dt753/Voice-Typer/releases/latest');
+    return;
+  }
+  // На Windows проверяем через electron-updater
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (e: any) {
+    console.error('[UPDATE] Ошибка ручной проверки:', e.message);
+  }
+});
+
 ipcMain.handle('history:get', () => getHistory());
 ipcMain.handle('history:delete', (_event, id: number) => deleteHistoryEntry(id));
 ipcMain.handle('history:clear', () => clearHistory());
@@ -414,6 +430,66 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   }
 });
 
+// ── Разрешения macOS ─────────────────────────────────────────────────────────
+
+function checkMicrophoneAccess(): void {
+  dialog.showMessageBox({
+    type: 'warning',
+    title: 'Нет доступа к микрофону',
+    message: 'Crystal Voice не получил доступ к микрофону',
+    detail: 'Без этого запись голоса работать не будет.\n\nКак выдать доступ:\n1. Нажмите «Открыть настройки»\n2. В списке найдите Crystal Voice\n3. Включите переключатель рядом с ним',
+    buttons: ['Открыть настройки', 'Позже'],
+    defaultId: 0,
+    cancelId: 1,
+  }).then(({ response }) => {
+    if (response !== 0) return;
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+  });
+}
+
+let _accessibilityPollTimer: ReturnType<typeof setInterval> | null = null;
+
+function checkAccessibility(): void {
+  if (systemPreferences.isTrustedAccessibilityClient(false)) return;
+
+  dialog.showMessageBox({
+    type: 'warning',
+    title: 'Требуется разрешение',
+    message: 'Crystal Voice нужен доступ к Универсальному доступу',
+    detail: 'Без этого вставка текста работать не будет.\n\nКак выдать доступ:\n1. Нажмите «Открыть настройки»\n2. В списке найдите Crystal Voice\n3. Включите переключатель рядом с ним\n\nПосле включения разрешение применится автоматически.',
+    buttons: ['Открыть настройки', 'Позже'],
+    defaultId: 0,
+    cancelId: 1,
+  }).then(({ response }) => {
+    if (response !== 0) return;
+
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
+
+    // Проверяем каждые 2 секунды — как только пользователь выдал разрешение
+    if (_accessibilityPollTimer) clearInterval(_accessibilityPollTimer);
+    _accessibilityPollTimer = setInterval(() => {
+      if (!systemPreferences.isTrustedAccessibilityClient(false)) return;
+      clearInterval(_accessibilityPollTimer!);
+      _accessibilityPollTimer = null;
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Готово',
+        message: 'Доступ к Универсальному доступу получен',
+        detail: 'Вставка текста теперь работает.',
+        buttons: ['OK'],
+      });
+    }, 2000);
+
+    // Перестаём поллить через 5 минут если пользователь так и не выдал
+    setTimeout(() => {
+      if (_accessibilityPollTimer) {
+        clearInterval(_accessibilityPollTimer);
+        _accessibilityPollTimer = null;
+      }
+    }, 5 * 60 * 1000);
+  });
+}
+
 // ── Запуск приложения ─────────────────────────────────────────────────────────
 
 const APP_ICON = path.join(__dirname, '../assets/icon.png');
@@ -432,9 +508,13 @@ app.whenReady().then(async () => {
 
   // 3. На macOS запрашиваем разрешение на микрофон до открытия окон
   if (process.platform === 'darwin') {
-    const micGranted = await systemPreferences.askForMediaAccess('microphone');
-    if (!micGranted) {
-      console.warn('[WARN] Доступ к микрофону отклонён. Откройте Системные настройки → Конфиденциальность → Микрофон.');
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    if (status === 'not-determined') {
+      await systemPreferences.askForMediaAccess('microphone');
+    }
+    // Перепроверяем после системного диалога (или если уже было denied)
+    if (systemPreferences.getMediaAccessStatus('microphone') !== 'granted') {
+      checkMicrophoneAccess();
     }
   }
 
@@ -452,8 +532,9 @@ app.whenReady().then(async () => {
   createRecorderWindow();
   openSettings();
 
-  // 5.5 Авто-обновление (только в production)
-  if (app.isPackaged) {
+  // 5.5 Авто-обновление (только Windows, в production)
+  // На macOS auto-update требует подписи — используем ручную проверку через GitHub
+  if (app.isPackaged && process.platform !== 'darwin') {
     autoUpdater.on('checking-for-update', () => console.log('[UPDATE] Проверка обновлений...'));
     autoUpdater.on('update-available', (info) => console.log('[UPDATE] Доступно:', info.version));
     autoUpdater.on('update-not-available', () => console.log('[UPDATE] Обновлений нет'));
@@ -478,21 +559,7 @@ app.whenReady().then(async () => {
 
   // 6. На macOS запрашиваем разрешение Accessibility для вставки текста
   if (process.platform === 'darwin') {
-    const trusted = systemPreferences.isTrustedAccessibilityClient(false);
-    if (!trusted) {
-      dialog.showMessageBox({
-        type: 'warning',
-        title: 'Нужно разрешение',
-        message: 'Crystal Voice нужен доступ к Универсальному доступу',
-        detail: 'Откройте Системные настройки → Конфиденциальность и безопасность → Универсальный доступ → добавьте Crystal Voice.\n\nБез этого вставка текста не будет работать.',
-        buttons: ['Открыть настройки', 'Позже'],
-        defaultId: 0,
-      }).then(({ response }) => {
-        if (response === 0) {
-          systemPreferences.isTrustedAccessibilityClient(true);
-        }
-      });
-    }
+    checkAccessibility();
   }
 
   // 7. Запускаем слушатель хоткея

@@ -58,6 +58,7 @@ class VoiceTyper:
         self._lock = threading.Lock()
 
         self._last_tap_time = 0.0
+        self._is_transcribing = False
         self._tray: pystray.Icon | None = None
 
     # ── Трей ─────────────────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ class VoiceTyper:
 
     def _start_recording(self) -> None:
         with self._lock:
-            if self.is_recording:
+            if self.is_recording or self._is_transcribing:
                 return
             self.is_recording = True
             self._audio_chunks = []
@@ -123,6 +124,9 @@ class VoiceTyper:
             self._set_tray(ICON_IDLE, "Voice Typer — ожидание")
             return
 
+        with self._lock:
+            self._is_transcribing = True
+
         self._set_tray(ICON_BUSY, "Voice Typer — транскрипция…")
         print("[STT] Отправляю в Whisper…")
 
@@ -152,6 +156,8 @@ class VoiceTyper:
         except Exception as exc:
             print(f"[ERR] Ошибка транскрипции: {exc}")
         finally:
+            with self._lock:
+                self._is_transcribing = False
             self._set_tray(ICON_IDLE, "Voice Typer — ожидание")
 
     # ── Вставка текста ───────────────────────────────────────────────────────
@@ -189,8 +195,13 @@ class VoiceTyper:
 
         if delta < DOUBLE_TAP_INTERVAL:
             # Двойной тап — переключаем режим
-            if not self.is_recording:
-                threading.Thread(target=self._start_recording, daemon=True).start()
+            with self._lock:
+                recording = self.is_recording
+                busy = self._is_transcribing
+            if busy:
+                return
+            if not recording:
+                self._start_recording()
             else:
                 threading.Thread(target=self._stop_and_transcribe, daemon=True).start()
 

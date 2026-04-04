@@ -5,6 +5,8 @@ copyright: Copyright © 2024
 directories:
   output: release
 
+afterPack: scripts/after-pack.js
+
 files:
   - dist/**/*
   - node_modules/**/*

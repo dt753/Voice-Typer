@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('api', {
   writeClipboard: (text: string) => ipcRenderer.invoke('clipboard:write', text),
 
   platform: process.platform,
+  getVersion:      () => ipcRenderer.invoke('app:version'),
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
 
   // ── History ──────────────────────────────────────────────────────────────
   getHistory: () => ipcRenderer.invoke('history:get'),

@@ -689,6 +689,19 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
 
     <button class="danger-btn" onclick="handleLogout()">Выйти из аккаунта</button>
   </div>
+
+  <!-- Версия и обновления -->
+  <div class="section-card" id="AC_update-block" style="display:none;margin-top:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="section-label" style="margin-bottom:2px;">Версия приложения</div>
+        <div style="font-size:12px;color:#4a5270;" id="AC_version-label">—</div>
+      </div>
+      <div class="crystal-btn">
+        <button class="action-btn" id="AC_update-btn" onclick="checkUpdates()" style="padding:6px 14px;">Проверить обновления</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1444,6 +1457,23 @@ async function init() {
 }
 
 init();
+
+// Версия и обновления (блок виден только на Mac)
+if (window.api.platform === 'darwin') {
+  const block = document.getElementById('AC_update-block');
+  if (block) block.style.display = 'block';
+  window.api.getVersion().then(v => {
+    const el = document.getElementById('AC_version-label');
+    if (el) el.textContent = `Crystal Voice ${v}`;
+  });
+}
+
+async function checkUpdates() {
+  const btn = document.getElementById('AC_update-btn');
+  if (btn) { btn.textContent = 'Открываем…'; btn.disabled = true; }
+  await window.api.checkForUpdates();
+  if (btn) { btn.textContent = 'Проверить обновления'; btn.disabled = false; }
+}
 </script>
 </body>
 </html>
