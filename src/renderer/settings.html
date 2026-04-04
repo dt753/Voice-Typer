@@ -297,12 +297,24 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
   <!-- ХОТКЕЙ -->
   <div class="section-card">
     <div class="section-label">Хоткей</div>
-    <div class="field-label">Клавиша (двойной тап — начало/конец записи)</div>
+    <div class="field-label" id="SE_hotkeyModeLabel">Клавиша (двойной тап — начало/конец записи)</div>
     <div class="hotkey-field" id="SE_hotkeyField">
       <span class="hotkey-hint" id="SE_hotkeyHint">Нажмите для смены</span>
       <span class="key-badge" id="SE_hotkeyBadge">F9</span>
     </div>
-    <div class="field-sub">F1–F12, буква, цифра, стрелка или сочетание с Ctrl/Alt/Shift.</div>
+    <div class="field-sub" id="SE_hotkeyDesc">F1–F12, буква, цифра, стрелка или сочетание с Ctrl/Alt/Shift.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;">
+      <div>
+        <div class="field-label">Push-to-talk</div>
+        <div style="font-size:11px;color:#3a4568;margin-top:2px;">Удерживай клавишу — запись, отпусти — вставка</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;">
+        <input type="checkbox" id="SE_pttToggle" style="opacity:0;width:0;height:0;" onchange="onPttToggle(this.checked)">
+        <span id="SE_pttTrack" style="position:absolute;inset:0;border-radius:10px;background:#1a1d27;border:1px solid rgba(155,125,255,0.2);cursor:pointer;transition:background 0.2s,border-color 0.2s;">
+          <span id="SE_pttThumb" style="position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#3a4568;transition:transform 0.2s,background 0.2s;"></span>
+        </span>
+      </label>
+    </div>
   </div>
 
   <!-- ЗВУК -->
@@ -885,9 +897,42 @@ const hotkeyField = document.getElementById('SE_hotkeyField');
 const hotkeyBadge = document.getElementById('SE_hotkeyBadge');
 const hotkeyHint  = document.getElementById('SE_hotkeyHint');
 
+let currentPttKey = ''; // e.code значение для PTT
+
+// Человекочитаемое название клавиши из e.code
+function codeToLabel(code) {
+  const map = {
+    ShiftLeft: 'Left Shift',   ShiftRight: 'Right Shift',
+    ControlLeft: 'Left Ctrl',  ControlRight: 'Right Ctrl',
+    AltLeft: 'Left Alt',       AltRight: 'Right Alt',
+    MetaLeft: 'Left Win',      MetaRight: 'Right Win',
+    CapsLock: 'Caps Lock',     Space: 'Space',
+    Enter: 'Enter',            Escape: 'Esc',
+    Tab: 'Tab',                Backspace: 'Backspace',
+    ArrowLeft: '← Left',       ArrowRight: '→ Right',
+    ArrowUp: '↑ Up',           ArrowDown: '↓ Down',
+    Insert: 'Insert',          Delete: 'Delete',
+    Home: 'Home',              End: 'End',
+    PageUp: 'Page Up',         PageDown: 'Page Down',
+    PrintScreen: 'Print Scr',  ScrollLock: 'Scroll Lock',
+    NumLock: 'Num Lock',
+  };
+  if (map[code]) return map[code];
+  if (/^F\d+$/.test(code)) return code;
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  if (code.startsWith('Numpad')) return 'Num ' + code.slice(6);
+  return code;
+}
+
 function setHotkey(accel) {
   currentHotkey = accel || 'F9';
   if (hotkeyBadge) hotkeyBadge.textContent = currentHotkey;
+}
+
+function setPttKeyUI(code) {
+  currentPttKey = code;
+  if (hotkeyBadge) hotkeyBadge.textContent = code ? codeToLabel(code) : (currentHotkey || 'F9');
 }
 
 function eventToAccelerator(e) {
@@ -912,6 +957,8 @@ function eventToAccelerator(e) {
   return [...mods, key].join('+');
 }
 
+const isPttMode = () => document.getElementById('SE_pttToggle')?.checked;
+
 hotkeyField.addEventListener('click', async () => {
   listeningForKey = true;
   hotkeyField.classList.add('listening');
@@ -922,6 +969,7 @@ hotkeyField.addEventListener('click', async () => {
 document.addEventListener('keydown', async (e) => {
   if (!listeningForKey) return;
   e.preventDefault(); e.stopPropagation();
+
   if (e.code === 'Escape') {
     listeningForKey = false;
     hotkeyField.classList.remove('listening');
@@ -929,14 +977,26 @@ document.addEventListener('keydown', async (e) => {
     await window.api.resumeHotkey();
     return;
   }
-  if (['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code)) return;
-  const accel = eventToAccelerator(e);
-  if (!accel) return;
-  listeningForKey = false;
-  hotkeyField.classList.remove('listening');
-  if (hotkeyHint) hotkeyHint.textContent = 'Нажмите для смены';
-  setHotkey(accel);
-  await window.api.resumeHotkey();
+
+  if (isPttMode()) {
+    // PTT: принимаем ЛЮБУЮ клавишу включая модификаторы
+    listeningForKey = false;
+    hotkeyField.classList.remove('listening');
+    if (hotkeyHint) hotkeyHint.textContent = 'Нажмите для смены';
+    setPttKeyUI(e.code);
+    await window.api.saveSettings({ pttKey: e.code });
+    await window.api.resumeHotkey();
+  } else {
+    // Двойной тап: только не-модификаторы
+    if (['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code)) return;
+    const accel = eventToAccelerator(e);
+    if (!accel) return;
+    listeningForKey = false;
+    hotkeyField.classList.remove('listening');
+    if (hotkeyHint) hotkeyHint.textContent = 'Нажмите для смены';
+    setHotkey(accel);
+    await window.api.resumeHotkey();
+  }
 });
 
 // ══ CRYSTAL SAVE FEEDBACK ════════════════════════
@@ -1270,6 +1330,31 @@ function handleLogout() {
   document.getElementById('AC_password').value = '';
 }
 
+// ══ PTT TOGGLE ═══════════════════════════════════
+function setPttToggleUI(enabled) {
+  const thumb = document.getElementById('SE_pttThumb');
+  const track = document.getElementById('SE_pttTrack');
+  const cb    = document.getElementById('SE_pttToggle');
+  const label = document.getElementById('SE_hotkeyModeLabel');
+  const desc  = document.getElementById('SE_hotkeyDesc');
+  if (!thumb || !track || !cb) return;
+  cb.checked = enabled;
+  thumb.style.transform = enabled ? 'translateX(16px)' : 'translateX(0)';
+  thumb.style.background = enabled ? '#9b7dff' : '#3a4568';
+  track.style.borderColor = enabled ? 'rgba(155,125,255,0.5)' : 'rgba(155,125,255,0.2)';
+  track.style.background  = enabled ? 'rgba(155,125,255,0.12)' : '#1a1d27';
+  if (label) label.textContent = enabled
+    ? 'Клавиша (удерживай — запись, отпусти — вставка)'
+    : 'Клавиша (двойной тап — начало/конец записи)';
+  if (desc) desc.textContent = enabled
+    ? 'Поддерживаются F1–F12 и Space.'
+    : 'F1–F12, буква, цифра, стрелка или сочетание с Ctrl/Alt/Shift.';
+}
+async function onPttToggle(enabled) {
+  setPttToggleUI(enabled);
+  await window.api.saveSettings({ hotkeyMode: enabled ? 'push-to-talk' : 'double-tap' });
+}
+
 // ══ OVERLAY TOGGLE ═══════════════════════════════
 function setOverlayToggleUI(enabled) {
   const thumb = document.getElementById('SE_overlayThumb');
@@ -1407,16 +1492,28 @@ function copyRefCode() {
 }
 
 async function applyRef() {
-  const code = document.getElementById('AC_apply-ref').value.trim();
-  const msg = document.getElementById('AC_ref-msg');
+  const input = document.getElementById('AC_apply-ref');
+  const btn   = document.getElementById('AC_apply-btn');
+  const msg   = document.getElementById('AC_ref-msg');
+  const code  = input.value.trim();
   if (!code) return;
+
+  btn.disabled = true;
   msg.style.color = '#4a5270'; msg.textContent = 'Применяем…';
-  const result = await window.api.applyReferral(code);
-  if (result.error) {
-    msg.style.color = '#e06b6b'; msg.textContent = result.error;
-  } else {
-    msg.style.color = '#3d7a55'; msg.textContent = result.message || '1 месяц активирован!';
-    await loadAuthState();
+
+  try {
+    const result = await window.api.applyReferral(code);
+    if (result.error) {
+      msg.style.color = '#e06b6b'; msg.textContent = result.error;
+    } else {
+      msg.style.color = '#3d7a55'; msg.textContent = result.message || '1 месяц активирован!';
+      input.value = '';
+      await loadAuthState();
+    }
+  } catch {
+    msg.style.color = '#e06b6b'; msg.textContent = 'Ошибка соединения, попробуйте снова';
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1432,6 +1529,9 @@ async function init() {
   volRange.value = s.soundVolume ?? 70;
   setTimeout(() => updateVol(volRange.value), 50);
   setOverlayToggleUI(s.overlayEnabled !== false);
+  const pttOn = s.hotkeyMode === 'push-to-talk';
+  setPttToggleUI(pttOn);
+  if (pttOn && s.pttKey) setPttKeyUI(s.pttKey);
   await loadMicDevices(s.micDeviceId || '');
 
   document.getElementById('SE_saveBtn').addEventListener('click', async () => {
