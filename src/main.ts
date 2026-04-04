@@ -241,6 +241,7 @@ function openSettings(): void {
   settingsWin.loadFile(path.join(__dirname, 'renderer/settings.html'));
   settingsWin.setMenuBarVisibility(false);
   settingsWin.on('closed', () => {
+    resumeHotkey(); // восстанавливаем хоткей если окно закрыли без выбора клавиши
     settingsWin = null;
   });
 }
@@ -332,12 +333,17 @@ ipcMain.handle('auth:getSubscription', async () => {
 ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
   const settings = loadSettings();
   if (!settings.authToken) return { error: 'Не авторизован' };
-  const res = await fetch(`${SERVER_URL}/referral/apply`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.authToken}` },
-    body: JSON.stringify({ code }),
-  });
-  return await res.json();
+  try {
+    const res = await fetch(`${SERVER_URL}/referral/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.authToken}` },
+      body: JSON.stringify({ code }),
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return { error: `Ошибка сервера (${res.status})` }; }
+  } catch {
+    return { error: 'Ошибка соединения' };
+  }
 });
 ipcMain.handle('app:version', () => app.getVersion());
 ipcMain.handle('stats:get', () => getStats());

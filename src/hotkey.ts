@@ -151,6 +151,9 @@ type HotkeyMode = 'double-tap' | 'push-to-talk';
 let currentPttKey = ''; // e.code формат, пустой = используем currentAccel
 
 function activatePtt(onStart: () => void, onStop: () => void): void {
+  // Убираем старые слушатели перед добавлением новых (предотвращает дубли)
+  uIOhook.removeAllListeners('keydown');
+  uIOhook.removeAllListeners('keyup');
   const keycode = getPttKeycode(currentPttKey || currentAccel);
   if (keycode === null) {
     console.warn(`[HOTKEY] Push-to-talk: клавиша "${currentAccel}" не поддерживается, используйте F1–F12`);
