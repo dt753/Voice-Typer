@@ -17,6 +17,8 @@ export interface AppSettings {
   micDeviceId: string;
   vadThreshold: number;
   hotkey: string;
+  hotkeyMode: 'double-tap' | 'push-to-talk';
+  pttKey: string; // e.code формат: 'ShiftRight', 'CapsLock', 'KeyA', 'F9' и т.д.
   replacements: Replacement[];
   dictionary: string[];
   customInstructions: string;
@@ -42,6 +44,8 @@ const DEFAULTS: AppSettings = {
   micDeviceId: '',
   vadThreshold: 0.008,
   hotkey: 'F9',
+  hotkeyMode: 'double-tap',
+  pttKey: '',
   replacements: [],
   dictionary: [],
   customInstructions: '',
@@ -135,4 +139,38 @@ export function deleteHistoryEntry(id: number): void {
 
 export function clearHistory(): void {
   db.prepare('DELETE FROM history').run();
+}
+
+export interface Stats {
+  todayWords:          number;
+  totalWords:          number;
+  totalTranscriptions: number;
+  timeSavedMinutes:    number;
+}
+
+export function getStats(): Stats {
+  const countWords = (text: string) =>
+    text?.trim() ? text.trim().split(/\s+/).length : 0;
+
+  const todayStart = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+
+  const all = db.prepare(
+    `SELECT text, createdAt FROM history WHERE status = 'ok'`
+  ).all() as { text: string; createdAt: number }[];
+
+  let totalWords = 0;
+  let todayWords = 0;
+
+  for (const row of all) {
+    const w = countWords(row.text);
+    totalWords += w;
+    if (row.createdAt >= todayStart) todayWords += w;
+  }
+
+  return {
+    todayWords,
+    totalWords,
+    totalTranscriptions: all.length,
+    timeSavedMinutes: Math.round(totalWords / 40), // ~40 слов/мин средняя скорость печати
+  };
 }

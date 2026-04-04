@@ -15,10 +15,10 @@ import {
 import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as zlib from 'zlib';
-import { startHotkeyListener, stopHotkeyListener, updateHotkey, suspendHotkey, resumeHotkey } from './hotkey';
+import { startHotkeyListener, stopHotkeyListener, updateHotkey, updateHotkeyMode, updatePttKey, suspendHotkey, resumeHotkey } from './hotkey';
 import { transcribe } from './transcriber';
 import { injectText } from './injector';
-import { initDb, loadSettings, saveSettings, addHistoryEntry, getHistory, deleteHistoryEntry, clearHistory, Replacement } from './db';
+import { initDb, loadSettings, saveSettings, addHistoryEntry, getHistory, deleteHistoryEntry, clearHistory, getStats, Replacement } from './db';
 
 function applyReplacements(text: string, replacements: Replacement[]): string {
   let result = text;
@@ -340,6 +340,7 @@ ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
   return await res.json();
 });
 ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('stats:get', () => getStats());
 
 ipcMain.handle('update:check', async () => {
   if (process.platform === 'darwin') {
@@ -381,6 +382,16 @@ ipcMain.handle('settings:set', (_event, data) => {
   // Обновляем хоткей без перезапуска
   if (data.hotkey && data.hotkey !== current.hotkey) {
     updateHotkey(data.hotkey);
+  }
+
+  // Переключаем режим хоткея
+  if (data.hotkeyMode && data.hotkeyMode !== current.hotkeyMode) {
+    updateHotkeyMode(data.hotkeyMode);
+  }
+
+  // Обновляем PTT-клавишу
+  if (data.pttKey !== undefined && data.pttKey !== current.pttKey) {
+    updatePttKey(data.pttKey);
   }
 
   // Перезапускаем стрим микрофона если изменился девайс
@@ -564,19 +575,31 @@ app.whenReady().then(async () => {
 
   // 7. Запускаем слушатель хоткея
   const settings = loadSettings();
-  startHotkeyListener(() => {
-    if (!isRecording) {
-      isRecording = true;
-      playSound('chime-start.wav');
-      setTrayState('recording');
-      showOverlay('recording');
-      recorderWin?.webContents.send('recorder:start');
-    } else {
-      isRecording = false;
-      playSound('chime-start.wav');
-      recorderWin?.webContents.send('recorder:stop');
-    }
-  }, settings.hotkey);
+
+  function onRecordStart(): void {
+    if (isRecording) return;
+    isRecording = true;
+    playSound('chime-start.wav');
+    setTrayState('recording');
+    showOverlay('recording');
+    recorderWin?.webContents.send('recorder:start');
+  }
+
+  function onRecordStop(): void {
+    if (!isRecording) return;
+    isRecording = false;
+    playSound('chime-start.wav');
+    recorderWin?.webContents.send('recorder:stop');
+  }
+
+  startHotkeyListener(
+    () => { isRecording ? onRecordStop() : onRecordStart(); },
+    settings.hotkey,
+    settings.hotkeyMode,
+    onRecordStart,
+    onRecordStop,
+    settings.pttKey,
+  );
 });
 
 app.on('will-quit', () => {

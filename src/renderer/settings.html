@@ -668,6 +668,25 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
       </div>
     </div>
 
+    <!-- Статистика -->
+    <div class="section-card" id="AC_stats-block">
+      <div class="section-label" style="margin-bottom:12px;">Статистика</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
+        <div>
+          <div style="font-size:20px;font-weight:600;color:#9b7dff;" id="ST_today-words">—</div>
+          <div style="font-size:11px;color:#4a5270;margin-top:3px;">слов сегодня</div>
+        </div>
+        <div>
+          <div style="font-size:20px;font-weight:600;color:#9b7dff;" id="ST_total-words">—</div>
+          <div style="font-size:11px;color:#4a5270;margin-top:3px;">слов всего</div>
+        </div>
+        <div>
+          <div style="font-size:20px;font-weight:600;color:#9b7dff;" id="ST_time-saved">—</div>
+          <div style="font-size:11px;color:#4a5270;margin-top:3px;">мин сэкономлено</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Реферальный код -->
     <div class="ac-ref-share ac-hover-card">
       <svg class="ac-card-crystal" width="14" height="22" viewBox="0 0 20 30" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="acg2l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7868b0"/><stop offset="100%" stop-color="#9888c8"/></linearGradient><linearGradient id="acg2r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ccc4ec"/><stop offset="100%" stop-color="#eeeaf8"/></linearGradient></defs><polygon points="10,1 7,6 7,24 10,28 13,24 13,6" fill="url(#acg2l)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="13,6 10,1 16,5 16,25 13,28 10,28 13,24" fill="url(#acg2r)" stroke="#2e2050" stroke-width="1.4" stroke-linejoin="round"/><polygon points="10,1 16,5 13,6 7,6" fill="#eeeaf8" stroke="#2e2050" stroke-width="1"/></svg>
@@ -1477,6 +1496,13 @@ async function loadAuthState() {
   if (sub?.referral_code) {
     document.getElementById('AC_my-ref').textContent = sub.referral_code;
   }
+
+  // Статистика
+  const stats = await window.api.getStats();
+  const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+  document.getElementById('ST_today-words').textContent = fmt(stats.todayWords);
+  document.getElementById('ST_total-words').textContent = fmt(stats.totalWords);
+  document.getElementById('ST_time-saved').textContent  = fmt(stats.timeSavedMinutes);
 }
 
 function copyRefCode() {

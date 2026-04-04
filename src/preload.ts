@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('api', {
   platform: process.platform,
   getVersion:      () => ipcRenderer.invoke('app:version'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  getStats:        () => ipcRenderer.invoke('stats:get'),
 
   // ── History ──────────────────────────────────────────────────────────────
   getHistory: () => ipcRenderer.invoke('history:get'),
