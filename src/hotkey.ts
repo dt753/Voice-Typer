@@ -67,6 +67,12 @@ const CODE_TO_UIOHOOK: Record<string, number> = {
   '6': UiohookKey[6], '7': UiohookKey[7], '8': UiohookKey[8], '9': UiohookKey[9],
   Left: UiohookKey.ArrowLeft, Right: UiohookKey.ArrowRight,
   Up:   UiohookKey.ArrowUp,   Down:  UiohookKey.ArrowDown,
+  // Знаки препинания и символы
+  Minus: UiohookKey.Minus, Equal: UiohookKey.Equal,
+  BracketLeft: UiohookKey.BracketLeft, BracketRight: UiohookKey.BracketRight,
+  Backslash: UiohookKey.Backslash, Semicolon: UiohookKey.Semicolon,
+  Quote: UiohookKey.Quote, Backquote: UiohookKey.Backquote,
+  Comma: UiohookKey.Comma, Period: UiohookKey.Period, Slash: UiohookKey.Slash,
   // Numpad
   Numpad0: UiohookKey.Numpad0, Numpad1: UiohookKey.Numpad1,
   Numpad2: UiohookKey.Numpad2, Numpad3: UiohookKey.Numpad3,
