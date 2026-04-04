@@ -127,19 +127,44 @@ app.post('/referral/apply', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Реферальный код уже использован' });
   }
 
-  // Активируем 1 месяц бесплатно
-  const periodEnd = new Date();
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  // Активируем 1 месяц тому, кто ввёл код
+  const { data: mySub } = await supabase
+    .from('subscriptions')
+    .select('current_period_end')
+    .eq('user_id', req.user.id)
+    .single();
+
+  const myBase = mySub?.current_period_end && new Date(mySub.current_period_end) > new Date()
+    ? new Date(mySub.current_period_end)
+    : new Date();
+  myBase.setMonth(myBase.getMonth() + 1);
 
   await supabase
     .from('subscriptions')
-    .update({ status: 'active', current_period_end: periodEnd.toISOString() })
-    .eq('user_id', req.user.id);
+    .upsert({ user_id: req.user.id, status: 'active', current_period_end: myBase.toISOString() },
+             { onConflict: 'user_id' });
 
   await supabase
     .from('profiles')
     .update({ referred_by: code })
     .eq('id', req.user.id);
+
+  // Награда рефереру — тоже +1 месяц
+  const { data: refSub } = await supabase
+    .from('subscriptions')
+    .select('current_period_end')
+    .eq('user_id', profile.id)
+    .single();
+
+  const refBase = refSub?.current_period_end && new Date(refSub.current_period_end) > new Date()
+    ? new Date(refSub.current_period_end)
+    : new Date();
+  refBase.setMonth(refBase.getMonth() + 1);
+
+  await supabase
+    .from('subscriptions')
+    .upsert({ user_id: profile.id, status: 'active', current_period_end: refBase.toISOString() },
+             { onConflict: 'user_id' });
 
   res.json({ ok: true, message: '1 месяц бесплатного доступа активирован!' });
 });
