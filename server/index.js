@@ -185,7 +185,7 @@ app.get('/subscription', requireAuth, async (req, res) => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('referral_code, referred_by')
+    .select('referral_code, referred_by, username')
     .eq('id', req.user.id)
     .single();
 
@@ -193,6 +193,7 @@ app.get('/subscription', requireAuth, async (req, res) => {
     subscription: data,
     referral_code: profile?.referral_code,
     referred_by: profile?.referred_by,
+    username: profile?.username ?? '',
   });
 });
 
