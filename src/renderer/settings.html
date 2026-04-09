@@ -654,8 +654,14 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
           </svg>
         </div>
         <div style="flex:1;min-width:0;">
-          <input id="AC_display-name" class="input-field" placeholder="Введи никнейм" style="background:transparent;border:none;border-bottom:1px solid rgba(155,125,255,0.15);border-radius:0;padding:4px 0;font-size:14px;font-weight:500;color:#d0d4e8;width:100%;" autocomplete="off">
-          <div class="profile-email" id="AC_email-disp" style="margin-top:4px;"></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="AC_display-name" class="input-field" placeholder="Введи никнейм" maxlength="30" style="background:transparent;border:none;border-bottom:1px solid rgba(155,125,255,0.15);border-radius:0;padding:4px 0;font-size:14px;font-weight:500;color:#d0d4e8;flex:1;min-width:0;" autocomplete="off">
+            <button id="AC_name-save-btn" onclick="saveUsername()" style="display:none;font-size:11px;padding:3px 10px;border:1px solid rgba(155,125,255,0.3);border-radius:5px;background:transparent;color:#9b7dff;cursor:pointer;white-space:nowrap;transition:all 0.15s;">Сохранить</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <div class="profile-email" id="AC_email-disp"></div>
+            <div id="AC_name-msg" style="font-size:11px;min-height:14px;"></div>
+          </div>
         </div>
       </div>
       <div class="divider"></div>
@@ -1333,15 +1339,6 @@ async function loadInstructions() {
 }
 
 // ══ ACCOUNT ══════════════════════════════════════
-function handleLogin() {
-  const email = document.getElementById('AC_email').value.trim();
-  if (!email) return;
-  document.getElementById('AC_initials').textContent = email.slice(0,2).toUpperCase();
-  document.getElementById('AC_name').textContent = email.split('@')[0];
-  document.getElementById('AC_email-disp').textContent = email;
-  document.getElementById('state-guest').classList.remove('visible');
-  document.getElementById('state-auth').classList.add('visible');
-}
 function handleLogout() {
   document.getElementById('state-auth').classList.remove('visible');
   document.getElementById('state-guest').classList.add('visible');
@@ -1424,7 +1421,8 @@ async function handleAuthSubmit() {
     } else {
       const refCode = document.getElementById('AC_ref-input').value.trim();
       result = await window.api.register(email, password);
-      if (result && result.ok && refCode) {
+      // Применяем реферальный код только если токен уже есть (не needConfirm)
+      if (result && result.ok && !result.needConfirm && refCode) {
         await window.api.applyReferral(refCode);
       }
     }
@@ -1447,6 +1445,31 @@ async function handleAuthSubmit() {
   }
 }
 
+async function saveUsername() {
+  const nameInput = document.getElementById('AC_display-name');
+  const nameSaveBtn = document.getElementById('AC_name-save-btn');
+  const msg = document.getElementById('AC_name-msg');
+  const value = nameInput.value.trim();
+  if (!value) return;
+  nameSaveBtn.textContent = '...';
+  nameSaveBtn.disabled = true;
+  msg.textContent = '';
+  msg.style.color = '';
+  const result = await window.api.setUsername(value);
+  nameSaveBtn.disabled = false;
+  if (result?.error) {
+    msg.textContent = result.error;
+    msg.style.color = '#e06b6b';
+    nameSaveBtn.textContent = 'Сохранить';
+  } else {
+    msg.textContent = 'Сохранено!';
+    msg.style.color = '#7dffb0';
+    nameSaveBtn.style.display = 'none';
+    nameSaveBtn.textContent = 'Сохранить';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  }
+}
+
 async function handleLogout() {
   await window.api.logout();
   document.getElementById('state-guest').classList.add('visible');
@@ -1463,12 +1486,26 @@ async function loadAuthState() {
   document.getElementById('state-guest').classList.remove('visible');
   document.getElementById('state-auth').classList.add('visible');
   document.getElementById('AC_email-disp').textContent = s.userEmail || '';
+
+  // Загружаем никнейм из Supabase
   const nameInput = document.getElementById('AC_display-name');
-  nameInput.value = s.displayName || '';
-  nameInput.onblur = async () => {
-    await window.api.saveSettings({ displayName: nameInput.value.trim() });
-  };
-  nameInput.onkeydown = (e) => { if (e.key === 'Enter') nameInput.blur(); };
+  const nameSaveBtn = document.getElementById('AC_name-save-btn');
+  const nameMsg = document.getElementById('AC_name-msg');
+  nameInput.placeholder = 'Загрузка…';
+  nameInput.disabled = true;
+  window.api.getUsername().then(({ username }) => {
+    nameInput.disabled = false;
+    nameInput.placeholder = 'Введи никнейм';
+    nameInput.value = username || '';
+    nameMsg.textContent = '';
+  });
+  nameInput.addEventListener('input', () => {
+    nameSaveBtn.style.display = nameInput.value.trim() ? '' : 'none';
+  });
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); saveUsername(); }
+    if (e.key === 'Escape') { nameInput.blur(); }
+  });
 
   // Грузим подписку и статистику параллельно
   let [sub, stats] = await Promise.all([
@@ -1522,12 +1559,19 @@ function copyRefCode() {
   });
 }
 
+let _lastRefAttempt = 0;
 async function applyRef() {
   const input = document.getElementById('AC_apply-ref');
   const btn   = document.getElementById('AC_apply-btn');
   const msg   = document.getElementById('AC_ref-msg');
   const code  = input.value.trim();
   if (!code) return;
+
+  if (Date.now() - _lastRefAttempt < 3000) {
+    msg.style.color = '#e06b6b'; msg.textContent = 'Подождите перед следующей попыткой';
+    return;
+  }
+  _lastRefAttempt = Date.now();
 
   btn.disabled = true;
   msg.style.color = '#4a5270'; msg.textContent = 'Применяем…';

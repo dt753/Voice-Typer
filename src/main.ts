@@ -268,42 +268,117 @@ ipcMain.handle('settings:get', () => loadSettings());
 
 const SERVER_URL = 'https://voice-typer-production.up.railway.app';
 
+function parseJwtSub(token: string): string | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    // base64url → base64 (заменяем символы и добавляем padding)
+    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+    return typeof payload.sub === 'string' ? payload.sub : null;
+  } catch { return null; }
+}
+
 ipcMain.handle('auth:login', async (_event, { email, password }: { email: string; password: string }) => {
-  const res = await fetch(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json() as any;
-  if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка входа' };
-  saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email });
-  return { ok: true };
+  try {
+    const res = await fetchWithTimeout(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json() as any;
+    if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка входа' };
+    const userId = parseJwtSub(data.access_token) ?? '';
+    saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email, userId });
+    return { ok: true };
+  } catch {
+    return { error: 'Нет ответа от сервера, проверьте подключение' };
+  }
 });
 
 ipcMain.handle('auth:register', async (_event, { email, password }: { email: string; password: string }) => {
-  const res = await fetch(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json() as any;
-  if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка регистрации' };
-  if (data.access_token) saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email });
-  return { ok: true, needConfirm: !data.access_token };
+  try {
+    const res = await fetchWithTimeout(`https://kmlmocplptxuqqfqoizd.supabase.co/auth/v1/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json() as any;
+    if (!res.ok) return { error: data.error_description || data.msg || 'Ошибка регистрации' };
+    if (data.access_token) {
+      const userId = parseJwtSub(data.access_token) ?? '';
+      saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || '', userEmail: email, userId });
+    }
+    return { ok: true, needConfirm: !data.access_token };
+  } catch {
+    return { error: 'Нет ответа от сервера, проверьте подключение' };
+  }
 });
 
 ipcMain.handle('auth:logout', () => {
-  saveSettings({ authToken: '', userEmail: '', refreshToken: '' });
+  saveSettings({ authToken: '', userEmail: '', refreshToken: '', userId: '' });
 });
 
 const SUPABASE_URL = 'https://kmlmocplptxuqqfqoizd.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_H6mCa5aY7pv24R-6hebWqw_CSKOG36e';
 
+function fetchWithTimeout(url: string, options: RequestInit, ms = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+ipcMain.handle('auth:getUsername', async () => {
+  if (loadSettings().refreshToken) await refreshAuthToken();
+  const settings = loadSettings();
+  if (!settings.authToken) return { username: '' };
+  try {
+    const res = await fetchWithTimeout(`${SERVER_URL}/username`, {
+      headers: { 'Authorization': `Bearer ${settings.authToken}` },
+    }, 15000);
+    if (!res.ok) return { username: '' };
+    return await res.json();
+  } catch { return { username: '' }; }
+});
+
+ipcMain.handle('auth:setUsername', async (_event, username: string) => {
+  if (typeof username !== 'string') return { error: 'Неверный формат' };
+  const trimmed = username.trim();
+  if (!trimmed) return { error: 'Никнейм не может быть пустым' };
+  if (trimmed.length > 30) return { error: 'Максимум 30 символов' };
+  if (!/^[A-Za-z0-9_\- а-яёА-ЯЁ]+$/.test(trimmed)) return { error: 'Только буквы, цифры, пробел, - и _' };
+  if (loadSettings().refreshToken) await refreshAuthToken();
+  const settings = loadSettings();
+  if (!settings.authToken) return { error: 'Не авторизован' };
+  try {
+    const res = await fetchWithTimeout(`${SERVER_URL}/username`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.authToken}` },
+      body: JSON.stringify({ username: trimmed }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as any;
+      return { error: err.error || 'Ошибка сохранения' };
+    }
+    return { ok: true };
+  } catch { return { error: 'Ошибка соединения' }; }
+});
+
+let _refreshPromise: Promise<boolean> | null = null;
+
 async function refreshAuthToken(): Promise<boolean> {
+  // Защита от конкурентных вызовов — один refresh за раз
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = _doRefresh().finally(() => { _refreshPromise = null; });
+  return _refreshPromise;
+}
+
+async function _doRefresh(): Promise<boolean> {
   const settings = loadSettings();
   if (!settings.refreshToken) return false;
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
       body: JSON.stringify({ refresh_token: settings.refreshToken }),
@@ -311,7 +386,8 @@ async function refreshAuthToken(): Promise<boolean> {
     if (!res.ok) return false;
     const data = await res.json() as any;
     if (!data.access_token) return false;
-    saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || settings.refreshToken });
+    const userId = parseJwtSub(data.access_token) ?? settings.userId ?? '';
+    saveSettings({ authToken: data.access_token, refreshToken: data.refresh_token || settings.refreshToken, userId });
     return true;
   } catch { return false; }
 }
@@ -322,22 +398,28 @@ ipcMain.handle('auth:getSubscription', async () => {
   if (settings.refreshToken) await refreshAuthToken();
   try {
     const fresh = loadSettings();
-    const res = await fetch(`${SERVER_URL}/subscription`, {
+    const res = await fetchWithTimeout(`${SERVER_URL}/subscription`, {
       headers: { Authorization: `Bearer ${fresh.authToken}` },
-    });
+    }, 12000);
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
 });
 
 ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
+  if (typeof code !== 'string') return { error: 'Неверный формат кода' };
+  const trimmedCode = code.trim();
+  if (!trimmedCode) return { error: 'Введи код' };
+  if (trimmedCode.length > 50) return { error: 'Код слишком длинный' };
+  if (!/^[A-Za-z0-9_-]+$/.test(trimmedCode)) return { error: 'Код содержит недопустимые символы' };
+  if (loadSettings().refreshToken) await refreshAuthToken();
   const settings = loadSettings();
   if (!settings.authToken) return { error: 'Не авторизован' };
   try {
-    const res = await fetch(`${SERVER_URL}/referral/apply`, {
+    const res = await fetchWithTimeout(`${SERVER_URL}/referral/apply`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.authToken}` },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code: trimmedCode }),
     });
     const text = await res.text();
     try { return JSON.parse(text); } catch { return { error: `Ошибка сервера (${res.status})` }; }

@@ -53,4 +53,6 @@ contextBridge.exposeInMainWorld('api', {
   logout:          () => ipcRenderer.invoke('auth:logout'),
   getSubscription: () => ipcRenderer.invoke('auth:getSubscription'),
   applyReferral:   (code: string) => ipcRenderer.invoke('auth:applyReferral', code),
+  getUsername:     () => ipcRenderer.invoke('auth:getUsername'),
+  setUsername:     (username: string) => ipcRenderer.invoke('auth:setUsername', username),
 });

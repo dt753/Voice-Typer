@@ -18,6 +18,10 @@ export interface AppSettings {
   replacements: Replacement[];
   dictionary: string[];
   customInstructions: string;
+  authToken?: string;
+  refreshToken?: string;
+  userEmail?: string;
+  userId?: string;
 }
 
 const DEFAULTS: AppSettings = {

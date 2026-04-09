@@ -12,6 +12,7 @@ export interface Replacement {
 export interface AppSettings {
   authToken: string;
   userEmail: string;
+  userId: string;
   displayName: string;
   language: string;
   micDeviceId: string;
@@ -39,6 +40,7 @@ export interface HistoryEntry {
 const DEFAULTS: AppSettings = {
   authToken: '',
   userEmail: '',
+  userId: '',
   displayName: '',
   language: 'ru',
   micDeviceId: '',

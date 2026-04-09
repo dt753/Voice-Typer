@@ -196,6 +196,38 @@ app.get('/subscription', requireAuth, async (req, res) => {
   });
 });
 
+// ── GET /username ─────────────────────────────────────────────────────────────
+app.get('/username', requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', req.user.id)
+    .single();
+  if (error && error.code !== 'PGRST116') {
+    return res.status(500).json({ error: 'Ошибка сервера' });
+  }
+  res.json({ username: data?.username ?? '' });
+});
+
+// ── POST /username ────────────────────────────────────────────────────────────
+app.post('/username', requireAuth, async (req, res) => {
+  const username = (req.body.username ?? '').trim();
+  if (!username) return res.status(400).json({ error: 'Никнейм не может быть пустым' });
+  if (username.length > 30) return res.status(400).json({ error: 'Максимум 30 символов' });
+  if (!/^[A-Za-z0-9_\- а-яёА-ЯЁ]+$/.test(username)) {
+    return res.status(400).json({ error: 'Только буквы, цифры, пробел, - и _' });
+  }
+  const { error } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('id', req.user.id);
+  if (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Этот никнейм уже занят' });
+    return res.status(500).json({ error: 'Ошибка сохранения' });
+  }
+  res.json({ ok: true });
+});
+
 // ── GET /health ───────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
