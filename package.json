@@ -1,6 +1,6 @@
 {
   "name": "crystal-voice",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Voice-to-text for any app — Windows & Mac",
   "main": "dist/main.js",
   "author": "Crystal Voice",

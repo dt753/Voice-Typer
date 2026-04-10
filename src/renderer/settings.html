@@ -191,7 +191,7 @@ body { background: #13151c; font-family: 'Inter', sans-serif; color: #d0d4e8; he
     <polygon points="6,0 10,5 6,6.5 2,5" fill="#eeeaf8" stroke="#2e2050" stroke-width="0.6"/>
     <polygon points="7,1.5 9,5 7,6 6,4" fill="rgba(255,255,255,0.45)"/>
   </svg>
-  <div class="tabs">
+  <div class="tabs" style="display:none">
     <div class="tab active" onclick="switchTab(0)">Настройки</div>
     <div class="tab" onclick="switchTab(1)">История</div>
     <div class="tab" onclick="switchTab(2)">Замены</div>
@@ -1339,12 +1339,6 @@ async function loadInstructions() {
 }
 
 // ══ ACCOUNT ══════════════════════════════════════
-function handleLogout() {
-  document.getElementById('state-auth').classList.remove('visible');
-  document.getElementById('state-guest').classList.add('visible');
-  document.getElementById('AC_email').value = '';
-  document.getElementById('AC_password').value = '';
-}
 
 // ══ PTT TOGGLE ═══════════════════════════════════
 function setPttToggleUI(enabled) {
@@ -1472,33 +1466,37 @@ async function saveUsername() {
 
 async function handleLogout() {
   await window.api.logout();
+  showTabs(false);
   document.getElementById('state-guest').classList.add('visible');
   document.getElementById('state-auth').classList.remove('visible');
+  document.getElementById('AC_email').value = '';
+  document.getElementById('AC_password').value = '';
+}
+
+function showTabs(visible) {
+  document.querySelector('.tabs').style.display = visible ? '' : 'none';
+  if (!visible) {
+    // Принудительно переключаемся на страницу аккаунта
+    document.querySelectorAll('.page').forEach((p, j) => p.classList.toggle('visible', j === 4));
+    document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', j === 4));
+  }
 }
 
 async function loadAuthState() {
   const s = await window.api.getSettings();
   if (!s.authToken) {
+    showTabs(false);
     document.getElementById('state-guest').classList.add('visible');
     document.getElementById('state-auth').classList.remove('visible');
     return;
   }
+  showTabs(true);
   document.getElementById('state-guest').classList.remove('visible');
   document.getElementById('state-auth').classList.add('visible');
   document.getElementById('AC_email-disp').textContent = s.userEmail || '';
 
-  // Загружаем никнейм из Supabase
   const nameInput = document.getElementById('AC_display-name');
   const nameSaveBtn = document.getElementById('AC_name-save-btn');
-  const nameMsg = document.getElementById('AC_name-msg');
-  nameInput.placeholder = 'Загрузка…';
-  nameInput.disabled = true;
-  window.api.getUsername().then(({ username }) => {
-    nameInput.disabled = false;
-    nameInput.placeholder = 'Введи никнейм';
-    nameInput.value = username || '';
-    nameMsg.textContent = '';
-  });
   nameInput.addEventListener('input', () => {
     nameSaveBtn.style.display = nameInput.value.trim() ? '' : 'none';
   });
@@ -1543,6 +1541,9 @@ async function loadAuthState() {
   }
   if (sub?.referral_code) {
     document.getElementById('AC_my-ref').textContent = sub.referral_code;
+  }
+  if (sub?.username) {
+    nameInput.value = sub.username;
   }
 
 }

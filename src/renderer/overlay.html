@@ -155,8 +155,9 @@ html, body { background: transparent; width: 100%; height: 100%; overflow: hidde
 
   let currentState = 'idle';
 
-  // Клик по idle-кнопке → начать запись
+  // Клик по idle-кнопке → сразу скрыть (до ресайза окна), потом начать запись
   idleBtn.addEventListener('click', () => {
+    idleBtn.style.display = 'none';
     window.api.overlayClick();
   });
 

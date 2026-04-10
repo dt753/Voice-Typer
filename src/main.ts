@@ -53,6 +53,7 @@ let recorderWin: BrowserWindow | null = null;
 let settingsWin: BrowserWindow | null = null;
 let overlayWin: BrowserWindow | null = null;
 let isRecording = false;
+let overlayTopInterval: ReturnType<typeof setInterval> | null = null;
 
 
 // ── Иконки трея (PNG, работает на Windows и Mac) ─────────────────────────────
@@ -111,8 +112,17 @@ function playSound(file: string): void {
   const s = loadSettings();
   const vol = (s.soundVolume ?? 70) / 100;
   const soundPath = path.join(__dirname, '../assets/sounds', file).replace(/\\/g, '/');
-  recorderWin?.webContents.executeJavaScript(
-    `(function(){ const a = new Audio(${JSON.stringify('file:///' + soundPath)}); a.volume = ${vol}; a.play().catch(()=>{}); })()`
+  const url = JSON.stringify('file:///' + soundPath);
+  // Играем через overlayWin — он не открывает микрофон, нет хруста/шипения
+  overlayWin?.webContents.executeJavaScript(
+    `(function(){
+      if (!window._sounds) window._sounds = {};
+      let a = window._sounds[${url}];
+      if (!a) { a = new Audio(${url}); a.load(); window._sounds[${url}] = a; }
+      a.volume = ${vol};
+      a.currentTime = 0;
+      a.play().catch(()=>{});
+    })()`
   );
 }
 
@@ -174,6 +184,7 @@ function createOverlayWindow(): void {
       backgroundThrottling: false,
     },
   });
+  overlayWin.setAlwaysOnTop(true, 'screen-saver');
   overlayWin.loadFile(path.join(__dirname, 'renderer/overlay.html'));
   if (loadSettings().overlayEnabled !== false) overlayWin.showInactive();
 }
@@ -183,10 +194,22 @@ function showOverlay(state: 'recording' | 'processing'): void {
   if (!loadSettings().overlayEnabled) return;
   setOverlayBounds('active');
   overlayWin.webContents.send('overlay:state', state);
+  overlayWin.setAlwaysOnTop(true, 'screen-saver');
+  overlayWin.moveTop();
+  // Периодически поднимаем оверлей поверх всех окон
+  if (!overlayTopInterval) {
+    overlayTopInterval = setInterval(() => {
+      overlayWin?.moveTop();
+    }, 500);
+  }
 }
 
 function hideOverlay(): void {
   if (!overlayWin) return;
+  if (overlayTopInterval) {
+    clearInterval(overlayTopInterval);
+    overlayTopInterval = null;
+  }
   setOverlayBounds('idle');
   overlayWin.webContents.send('overlay:state', 'idle');
   if (!loadSettings().overlayEnabled) overlayWin.hide();
@@ -214,6 +237,18 @@ function createRecorderWindow(): void {
     },
   });
   recorderWin.loadFile(path.join(__dirname, 'renderer/recorder.html'));
+  recorderWin.webContents.on('did-finish-load', () => {
+    const soundPath = path.join(__dirname, '../assets/sounds/chime-start.wav').replace(/\\/g, '/');
+    const url = JSON.stringify('file:///' + soundPath);
+    recorderWin?.webContents.executeJavaScript(
+      `(function(){
+        if (!window._sounds) window._sounds = {};
+        const a = new Audio(${url});
+        a.load();
+        window._sounds[${url}] = a;
+      })()`
+    );
+  });
 }
 
 // ── Окно настроек ─────────────────────────────────────────────────────────────
@@ -250,8 +285,16 @@ function openSettings(): void {
 
 ipcMain.handle('sound:preview', (_event, vol: number) => {
   const soundPath = path.join(__dirname, '../assets/sounds/chime-start.wav').replace(/\\/g, '/');
+  const url = JSON.stringify('file:///' + soundPath);
   recorderWin?.webContents.executeJavaScript(
-    `(function(){ const a = new Audio(${JSON.stringify('file:///' + soundPath)}); a.volume = ${vol}; a.play().catch(()=>{}); })()`
+    `(function(){
+      if (!window._sounds) window._sounds = {};
+      let a = window._sounds[${url}];
+      if (!a) { a = new Audio(${url}); a.load(); window._sounds[${url}] = a; }
+      a.volume = ${vol};
+      a.currentTime = 0;
+      a.play().catch(()=>{});
+    })()`
   );
 });
 ipcMain.handle('hotkey:suspend', () => suspendHotkey());
@@ -268,16 +311,26 @@ ipcMain.handle('settings:get', () => loadSettings());
 
 const SERVER_URL = 'https://voice-typer-production.up.railway.app';
 
-function parseJwtSub(token: string): string | null {
+function parseJwt(token: string): any | null {
   try {
     const parts = token.split('.');
     if (parts.length < 2) return null;
-    // base64url → base64 (заменяем символы и добавляем padding)
     let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     while (b64.length % 4) b64 += '=';
-    const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
-    return typeof payload.sub === 'string' ? payload.sub : null;
+    return JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
   } catch { return null; }
+}
+
+function parseJwtSub(token: string): string | null {
+  const p = parseJwt(token);
+  return p && typeof p.sub === 'string' ? p.sub : null;
+}
+
+// Возвращает true если токен истёк или истечёт в ближайшие 60 секунд
+function isTokenExpired(token: string): boolean {
+  const p = parseJwt(token);
+  if (!p || typeof p.exp !== 'number') return true;
+  return Date.now() / 1000 > p.exp - 60;
 }
 
 ipcMain.handle('auth:login', async (_event, { email, password }: { email: string; password: string }) => {
@@ -329,17 +382,8 @@ function fetchWithTimeout(url: string, options: RequestInit, ms = 8000): Promise
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
-ipcMain.handle('auth:getUsername', async () => {
-  if (loadSettings().refreshToken) await refreshAuthToken();
-  const settings = loadSettings();
-  if (!settings.authToken) return { username: '' };
-  try {
-    const res = await fetchWithTimeout(`${SERVER_URL}/username`, {
-      headers: { 'Authorization': `Bearer ${settings.authToken}` },
-    }, 15000);
-    if (!res.ok) return { username: '' };
-    return await res.json();
-  } catch { return { username: '' }; }
+ipcMain.handle('auth:getUsername', () => {
+  return { username: loadSettings().displayName || '' };
 });
 
 ipcMain.handle('auth:setUsername', async (_event, username: string) => {
@@ -348,7 +392,7 @@ ipcMain.handle('auth:setUsername', async (_event, username: string) => {
   if (!trimmed) return { error: 'Никнейм не может быть пустым' };
   if (trimmed.length > 30) return { error: 'Максимум 30 символов' };
   if (!/^[A-Za-z0-9_\- а-яёА-ЯЁ]+$/.test(trimmed)) return { error: 'Только буквы, цифры, пробел, - и _' };
-  if (loadSettings().refreshToken) await refreshAuthToken();
+  { const s = loadSettings(); if (s.refreshToken && isTokenExpired(s.authToken)) await refreshAuthToken(); }
   const settings = loadSettings();
   if (!settings.authToken) return { error: 'Не авторизован' };
   try {
@@ -361,6 +405,7 @@ ipcMain.handle('auth:setUsername', async (_event, username: string) => {
       const err = await res.json().catch(() => ({})) as any;
       return { error: err.error || 'Ошибка сохранения' };
     }
+    saveSettings({ displayName: trimmed });
     return { ok: true };
   } catch { return { error: 'Ошибка соединения' }; }
 });
@@ -395,7 +440,7 @@ async function _doRefresh(): Promise<boolean> {
 ipcMain.handle('auth:getSubscription', async () => {
   const settings = loadSettings();
   if (!settings.authToken) return null;
-  if (settings.refreshToken) await refreshAuthToken();
+  if (settings.refreshToken && isTokenExpired(settings.authToken)) await refreshAuthToken();
   try {
     const fresh = loadSettings();
     const res = await fetchWithTimeout(`${SERVER_URL}/subscription`, {
@@ -412,7 +457,7 @@ ipcMain.handle('auth:applyReferral', async (_event, code: string) => {
   if (!trimmedCode) return { error: 'Введи код' };
   if (trimmedCode.length > 50) return { error: 'Код слишком длинный' };
   if (!/^[A-Za-z0-9_-]+$/.test(trimmedCode)) return { error: 'Код содержит недопустимые символы' };
-  if (loadSettings().refreshToken) await refreshAuthToken();
+  { const s = loadSettings(); if (s.refreshToken && isTokenExpired(s.authToken)) await refreshAuthToken(); }
   const settings = loadSettings();
   if (!settings.authToken) return { error: 'Не авторизован' };
   try {
@@ -459,6 +504,8 @@ ipcMain.on('overlay:mic-click', () => {
   } else {
     isRecording = false;
     playSound('chime-start.wav');
+    showOverlay('processing');
+    setTrayState('processing');
     recorderWin?.webContents.send('recorder:stop');
   }
 });
@@ -493,6 +540,12 @@ ipcMain.handle('settings:set', (_event, data) => {
   }
 });
 
+ipcMain.on('audio:cancel', () => {
+  overlayWin?.webContents.send('overlay:state', 'idle');
+  setOverlayBounds('idle');
+  setTrayState('idle');
+});
+
 ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   const settings = loadSettings();
   const time = new Date().toLocaleTimeString('ru-RU');
@@ -505,7 +558,7 @@ ipcMain.on('audio:data', async (_event, audioBuffer: Buffer) => {
   }
 
   // Обновляем токен заранее если есть refresh_token
-  if (settings.refreshToken) await refreshAuthToken();
+  if (settings.refreshToken && isTokenExpired(settings.authToken)) await refreshAuthToken();
 
   setTrayState('processing');
   showOverlay('processing');
@@ -677,6 +730,9 @@ app.whenReady().then(async () => {
     if (!isRecording) return;
     isRecording = false;
     playSound('chime-start.wav');
+    // Сразу переключаем в "Обработка..." — не ждём renderer
+    showOverlay('processing');
+    setTrayState('processing');
     recorderWin?.webContents.send('recorder:stop');
   }
 

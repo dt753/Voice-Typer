@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
 
   sendAudio: (arrayBuffer: ArrayBuffer) =>
     ipcRenderer.send('audio:data', Buffer.from(arrayBuffer)),
+  cancelAudio: () => ipcRenderer.send('audio:cancel'),
 
   // ── Settings window ──────────────────────────────────────────────────────
   getSettings: () => ipcRenderer.invoke('settings:get'),

@@ -11,19 +11,21 @@
   let currentStream = null;
   let currentSettings = null;
 
-  async function startStream() {
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : 'audio/webm';
+
+  async function openStream(settings) {
     if (currentStream) {
       currentStream.getTracks().forEach(t => t.stop());
       currentStream = null;
     }
-
-    const audioConstraint = currentSettings?.micDeviceId
-      ? { deviceId: { exact: currentSettings.micDeviceId } }
+    const audioConstraint = settings?.micDeviceId
+      ? { deviceId: { exact: settings.micDeviceId } }
       : true;
-
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
-      console.log('[RECORDER] Поток микрофона получен');
+      console.log('[RECORDER] Поток микрофона открыт');
     } catch (err) {
       console.warn('[RECORDER] Не удалось выбрать устройство, берём дефолтный:', err.message);
       try {
@@ -34,46 +36,46 @@
     }
   }
 
-  function stopStream() {
-    if (currentStream) {
-      currentStream.getTracks().forEach(t => t.stop());
-      currentStream = null;
-    }
-  }
-
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-    ? 'audio/webm;codecs=opus'
-    : 'audio/webm';
-
   async function init() {
     currentSettings = await window.api.getSettings();
 
-    window.api.onStart(async () => {
-      chunks = [];
-      await startStream();
-      if (!currentStream) return;
+    // Открываем микрофон один раз — держим постоянно открытым.
+    // Это убирает и гонку (нет async между start/stop) и хруст (устройство не переинициализируется).
+    await openStream(currentSettings);
 
+    window.api.onStart(() => {
+      if (!currentStream) {
+        console.error('[RECORDER] Поток недоступен');
+        window.api.cancelAudio();
+        return;
+      }
+      chunks = [];
       try {
         mediaRecorder = new MediaRecorder(currentStream, { mimeType });
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) chunks.push(e.data);
         };
         mediaRecorder.onstop = async () => {
-          stopStream();
-          const blob = new Blob(chunks, { type: mimeType });
-          if (blob.size < 8000) {
-            console.log('[RECORDER] Запись слишком короткая, пропускаем');
-            return;
+          try {
+            const blob = new Blob(chunks, { type: mimeType });
+            if (blob.size < 8000) {
+              console.log('[RECORDER] Запись слишком короткая, пропускаем');
+              window.api.cancelAudio();
+              return;
+            }
+            const arrayBuffer = await blob.arrayBuffer();
+            console.log('[RECORDER] Размер записи:', blob.size, 'байт, отправляем в Whisper');
+            window.api.sendAudio(arrayBuffer);
+          } catch (err) {
+            console.error('[RECORDER] Ошибка в onstop:', err);
+            window.api.cancelAudio();
           }
-          const arrayBuffer = await blob.arrayBuffer();
-          console.log('[RECORDER] Размер записи:', blob.size, 'байт, отправляем в Whisper');
-          window.api.sendAudio(arrayBuffer);
         };
         mediaRecorder.start();
         console.log('[RECORDER] Запись началась');
       } catch (err) {
         console.error('[RECORDER] Ошибка старта:', err);
-        stopStream();
+        window.api.cancelAudio();
       }
     });
 
@@ -81,12 +83,16 @@
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
         console.log('[RECORDER] Запись остановлена');
+      } else {
+        // Стоп пришёл раньше старта — отменяем
+        window.api.cancelAudio();
       }
     });
 
     window.api.onRestart(async () => {
-      console.log('[RECORDER] Настройки обновлены');
+      console.log('[RECORDER] Смена устройства, переоткрываем поток');
       currentSettings = await window.api.getSettings();
+      await openStream(currentSettings);
     });
   }
 
