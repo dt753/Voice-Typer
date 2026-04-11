@@ -57,6 +57,7 @@ const DEFAULTS: AppSettings = {
 };
 
 let db: Database.Database;
+let _settingsCache: AppSettings | null = null;
 
 export function initDb(): void {
   const dbPath = path.join(app.getPath('userData'), 'voicetyper.db');
@@ -96,12 +97,14 @@ function migrateFromJson(): void {
 }
 
 export function loadSettings(): AppSettings {
+  if (_settingsCache) return _settingsCache;
   const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
   const obj: any = { ...DEFAULTS };
   for (const row of rows) {
     try { obj[row.key] = JSON.parse(row.value); } catch { obj[row.key] = row.value; }
   }
-  return obj as AppSettings;
+  _settingsCache = obj as AppSettings;
+  return _settingsCache;
 }
 
 export function saveSettings(data: Partial<AppSettings>): void {
@@ -112,6 +115,7 @@ export function saveSettings(data: Partial<AppSettings>): void {
     }
   });
   tx(data);
+  _settingsCache = null;
 }
 
 export function addHistoryEntry(entry: HistoryEntry): void {

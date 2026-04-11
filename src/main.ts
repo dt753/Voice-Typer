@@ -604,6 +604,12 @@ let _accessibilityPollTimer: ReturnType<typeof setInterval> | null = null;
 function checkAccessibility(): void {
   if (systemPreferences.isTrustedAccessibilityClient(false)) return;
 
+  // Сбрасываем устаревшую TCC-запись (если приложение переустановлено или подпись изменилась)
+  try {
+    require('child_process').execSync('tccutil reset Accessibility com.crystalvoice.app');
+    console.log('[A11Y] TCC запись сброшена');
+  } catch {}
+
   dialog.showMessageBox({
     type: 'warning',
     title: 'Требуется разрешение',
@@ -615,6 +621,9 @@ function checkAccessibility(): void {
   }).then(({ response }) => {
     if (response !== 0) return;
 
+    // isTrustedAccessibilityClient(true) показывает нативный системный диалог macOS
+    // и добавляет приложение в список — надёжнее чем просто открыть URL
+    systemPreferences.isTrustedAccessibilityClient(true);
     shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
 
     // Проверяем каждые 2 секунды — как только пользователь выдал разрешение
