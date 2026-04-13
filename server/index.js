@@ -4,7 +4,7 @@ const multer = require('multer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { createClient } = require('@supabase/supabase-js');
-const OpenAI = require('openai');
+const Groq = require('groq-sdk');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -15,8 +15,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// OpenAI
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Groq
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.use(cors());
 app.use(express.json());
@@ -77,12 +77,11 @@ app.post('/transcribe', requireAuth, requireSubscription, upload.single('audio')
     if (dictionary) prompt += dictionary;
     if (instructions) prompt += (prompt ? '. ' : '') + instructions;
 
-    // Используем OpenAI SDK — он сам обрабатывает multipart
-    const { toFile } = require('openai');
+    const { toFile } = require('groq-sdk');
     const file = await toFile(req.file.buffer, 'audio.webm', { type: req.file.mimetype || 'audio/webm' });
 
-    const result = await openai.audio.transcriptions.create({
-      model: 'whisper-1',
+    const result = await groq.audio.transcriptions.create({
+      model: 'whisper-large-v3-turbo',
       file,
       language: language || undefined,
       prompt: prompt || undefined,
